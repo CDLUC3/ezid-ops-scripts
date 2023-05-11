@@ -1,0 +1,7 @@
+_profile: datacite
+_target: https://google.com
+datacite.date: xxxxx
+datacite.type: Dataset
+datacite.title: test record on shoulder - ark:/99999/fk4
+datacite.publisher: test publisher 
+datacite.creator: unknown

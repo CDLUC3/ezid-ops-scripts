@@ -1,1 +1,1 @@
-# ezid-ops
+# EZID Operational Scripts

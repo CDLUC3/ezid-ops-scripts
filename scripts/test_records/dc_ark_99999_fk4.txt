@@ -1,0 +1,7 @@
+_profile: dc
+_target: https://google.com
+dc.date: xxxxx
+dc.type: Dataset
+dc.title: test record - ark:/99999/fk4
+dc.publisher: test publisher
+dc.creator: unknown

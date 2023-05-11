@@ -1,0 +1,21 @@
+success: ark:/99999/fk4nc7cb9r
+success: doi:10.5062/F4V986BZ | ark:/b5062/f4v986bz
+success: ark:/99999/fk4hq5bz1f
+success: doi:10.5062/F4KS6PTM | ark:/b5062/f4ks6ptm
+success: ark:/99999/fk4cz4n45t
+success: ark:/99999/fk8wm1bkv
+success: doi:10.15697/FK2G02W | ark:/c5697/fk2g02w
+success: doi:10.15697/FK2B60Z | ark:/c5697/fk2b60z
+success: ark:/99999/fk4863xb0x
+success: doi:10.5062/F4G15Z3M | ark:/b5062/f4g15z3m
+success: ark:/99999/fk44f36h69
+success: doi:10.5062/F46M353Q | ark:/b5062/f46m353q
+success: ark:/99999/fk40p2gq33
+success: ark:/99999/fk8rv0kw6
+success: doi:10.15697/FK26G63 | ark:/c5697/fk26g63
+success: ark:/99999/fk4vx1s28d
+success: doi:10.5062/F42V2DDF | ark:/b5062/f42v2ddf
+success: ark:/99999/fk4r51282d
+success: doi:10.5062/F4TB155P | ark:/b5062/f4tb155p
+success: ark:/99999/fk4mg91v4j
+success: doi:10.15697/FK29893 | ark:/c5697/fk29893

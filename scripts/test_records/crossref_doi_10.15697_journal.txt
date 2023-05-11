@@ -1,0 +1,4 @@
+_crossref: yes
+_profile: crossref
+crossref: <?xml version="1.0"?><journal xmlns="http://www.crossref.org/schema/5.3.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:jats="http://www.ncbi.nlm.nih.gov/JATS1" xsi:schemaLocation="http://www.crossref.org/schema/5.3.0 http://www.crossref.org/schema/deposit/crossref5.3.0.xsd" type="preprint"><journal_metadata language="en"><full_title>Journal of Awesome Cat Names</full_title><abbrev_title>JACN</abbrev_title><!-- placeholder DOI, will be overwritten when DOI is minted -->  <doi_data>    <doi></doi>    <resource>https://dev.eartharxiv.org/repository/view/1777/</resource>  </doi_data>  </journal_metadata></journal>
+_target: https://escholarship.org/uc/item/7bx9x5wn

@@ -1,0 +1,7 @@
+_profile: datacite
+_target: https://google.com
+datacite.publicationyear: 2023
+datacite.type: Dataset
+datacite.title: test record on shoulder doi:10.5072/FK2
+datacite.publisher: test publisher
+datacite.creator: unknown

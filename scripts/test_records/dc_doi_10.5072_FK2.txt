@@ -1,0 +1,7 @@
+_profile: dc
+_target: https://google.com
+dc.date: 2023
+dc.type: Dataset
+dc.title: test record on shoulder doi:10.5072/FK2
+dc.publisher: test publisher 
+dc.creator: unknown
