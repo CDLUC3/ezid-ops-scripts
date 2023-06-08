@@ -119,7 +119,6 @@ def create_identifers(base_url, user, password):
 
     return status
         
-
 def escape (s, colonToo=False):
     if colonToo:
       p = "[%:\r\n]"
@@ -145,7 +144,22 @@ def verify_ezid_status(base_url, check_item_no):
     else:
         print(f"error {check_item_no} - {item} - code({status_code}): {err_msg}")
 
-def verify_search(base_url, check_item_no):
+def verify_ezid_version(base_url, version, check_item_no):
+    item = "Verify EZID version"
+    success, status_code, text, err_msg = get_status(f"{base_url}/version")
+    if success:
+        try:
+            if version:
+                assert text == version
+                print(f"ok {check_item_no} - {item} - {version}")
+            else:
+                print(f"info {check_item_no} - EZID version - {text}")
+        except AssertionError as e:
+            print(f"error {check_item_no} - {item} - AssertionError: returned text \"{text}\" does not match expected text: \"{version}\"")
+    else:
+        print(f"error {check_item_no} - {item} - code({status_code}): {err_msg}")
+
+def verify_search_function(base_url, check_item_no):
     item = "Verify search function"
     search_url = "search?filtered=t&title=California+Digital+Library&object_type=Dataset"
     success, status_code, text, err_msg = get_status(f"{base_url}/{search_url}")
@@ -154,16 +168,36 @@ def verify_search(base_url, check_item_no):
     else:
         print(f"error {check_item_no} - {item} - code({status_code}): {err_msg}")
 
-def create_identifiers(user, password, base_url, check_item_no):
+def verify_create_identifier_status(user, password, base_url, check_item_no):
     print("## Create identifier")
     results = create_identifers(base_url, user, password)
     i = 0
+    created_ids = []
     for shoulder, id_created, text in results:
         i += 1
         if id_created:
             print(f"ok {check_item_no}.{i} - {id_created} created")
+            created_ids.append(id_created)
         else:
             print(f"error {check_item_no}.{i} - {text} on {shoulder}")
+    return created_ids
+
+def verify_update_identifier_status(user, password, base_url, identifiers, check_item_no):
+    print("## Update identifier")
+    if identifiers:
+        id = identifiers[-1]
+        data = {
+            "_target": "https://cdlib.org/services/"
+        }
+        data = toAnvl(data).encode("UTF-8")
+        url = f"{base_url}/id/{id}"
+        http_success, status_code, text, err_msg = post_data(url, user, password, data)
+        if http_success and status_code == 200:
+            print(f"ok {check_item_no} - {id} updated with new data: {data}")
+        else:
+            print(f"error {check_item_no} - update {id} failed - status_code: {status_code}: {text}: {err_msg}")
+    else:
+        print(f"info {check_item_no} - no item to udpate")
 
 def check_background_jobs(env, check_item_no):
     if env in ['test', 'dev']:
@@ -200,11 +234,13 @@ def main():
     parser.add_argument('-e', '--env', type=str, required=True, choices=['test', 'dev', 'stg', 'prd'], help='Environment')
     parser.add_argument('-u', '--user', type=str, required=True, help='user name')
     parser.add_argument('-p', '--password', type=str, required=True, help='password')
+    parser.add_argument('-v', '--version', type=str, required=False, help='version')
  
     args = parser.parse_args()
     env = args.env
     user = args.user
     password = args.password
+    version = args.version
   
     base_urls = {
         "test": "http://127.0.0.1:8000",
@@ -214,13 +250,15 @@ def main():
     }
     base_url = base_urls.get(env)
     
-    verify_ezid_status(base_url, check_item_no="1")
+    verify_ezid_status(base_url, check_item_no="1.1")
+    verify_ezid_version(base_url, version=version, check_item_no="1.2")
 
-    verify_search(base_url, check_item_no="2")
+    verify_search_function(base_url, check_item_no="2")
 
-    create_identifiers(user, password, base_url, check_item_no="3")
+    created_ids = verify_create_identifier_status(user, password, base_url, check_item_no="3")
+    verify_update_identifier_status(user, password, base_url, created_ids, check_item_no="4")
 
-    check_background_jobs(env, check_item_no="4")
+    check_background_jobs(env, check_item_no="5")
  
 
 
