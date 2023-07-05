@@ -6,7 +6,7 @@ if [ $# -ne 1 ]; then
 fi
 
 case $1 in
-    restart|start|status|stop)
+    restart|start|stop)
         ACTION=$1 ;;
     *) errexit "Action "$1" is not recognized."
 esac
