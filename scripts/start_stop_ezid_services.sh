@@ -8,12 +8,14 @@ fi
 case $1 in
     restart|start|stop)
         ACTION=$1 ;;
-    *) errexit "Action "$1" is not recognized."
+    *) 
+      echo "Action "$1" is not recognized."
+      exit
 esac
 
 HOSTNSME=`hostname`
 
-echo $HOSTNAME
+echo "On host: $HOSTNAME"
 
 if [[ "$HOSTNAME" == *"ezid"* && "$HOSTNAME" == *"dev"* ]]; then
     ENV="dev"
@@ -22,10 +24,12 @@ elif [[ "$HOSTNAME" == *"ezid"* && "$HOSTNAME" == *"stg"* ]]; then
 elif [[ "$HOSTNAME" == *"ezid"* && "$HOSTNAME" == *"prd"* ]]; then
     ENV="prd"
 else
-    errexit "Hostname "$HOSTNAME" is not recognized."
+    echo "Hostname "$HOSTNAME" is not recognized."
+    exit
 fi
 
 job_list=("ezid")
+
 job_list_1=(
 "ezid-proc-binder" 
 "ezid-proc-crossref" 
@@ -35,6 +39,7 @@ job_list_1=(
 "ezid-proc-newsfeed"
 "ezid-proc-search-indexer"
 "ezid-proc-stats")
+
 job_list_2=(
 "ezid-proc-link-checker" 
 "ezid-proc-link-checker-update")
