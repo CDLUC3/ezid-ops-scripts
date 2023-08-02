@@ -1,0 +1,35 @@
+*.before.py
+static/
+.DS_Store
+current_work.md
+
+# Files
+*.pyc
+Z*
+\.DS_Store$
+\.idea
+\.map$
+\.old[0-9]*$
+\.project$
+\.pydevproject$
+db
+dev/css/*
+dev/legacy-scss/css/*
+env
+master_shoulders.txt
+node_modules
+settings/ezid.conf.shadow
+settings.py
+static/javascripts/metadata_tooltips.js
+ui_library
+~$
+
+
+# Dirs
+dist/
+build/
+minters/
+templates/info/
+*\.egg-info/
+\.pytest_cache/
+.eggs/
