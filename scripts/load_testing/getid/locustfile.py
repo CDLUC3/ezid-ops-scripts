@@ -1,9 +1,11 @@
+import logging
 import os
 import random
 import time
 import locust
 import pymysql
 
+L = logging.getLogger("resolve_test")
 
 def get_mysql_connection():
     dbconn = pymysql.connect(
@@ -24,7 +26,7 @@ def load_identifiers(num_to_get=100):
         sql = (
             "SELECT identifier FROM ezidapp_identifier "
             "WHERE identifier like 'ark:%%' AND isTest=False AND status='P' "
-            "ORDER BY createTime DESC limit %s;"
+            "ORDER BY createTime DESC LIMIT %s OFFSET 12345 ;"
         )
         cursor.execute(sql, (num_to_get))
         for row in cursor.fetchall():
@@ -47,15 +49,16 @@ class EzidUser(locust.HttpUser):
     def get_id(self):
         num_ids = 1000
         t_interval = 0.01 #seconds
-        num_reps = 100
+        num_reps = 10
         headers = {
-            "No-Redirect":"true"
+            #"No-Redirect":"true"
         }
         test_identifiers = load_identifiers(num_ids)
         for i in range(0,num_reps):
             current_id = random.randrange(0, num_ids)
             url = f"{test_identifiers[current_id]}"
-            self.client.get(url, headers=headers)
+            res = self.client.get(url, headers=headers, allow_redirects=False)
+            #L.info("%s %s %s", res.status_code, url, res.history)
             time.sleep(t_interval)
 
     def on_start(self):
