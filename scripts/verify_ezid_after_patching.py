@@ -10,6 +10,7 @@ import subprocess
 BACKGROUND_JOBS_PRD = {
     "ezid-proc-binder": True,
     "ezid-proc-cleanup-async-queues": True,
+    "ezid-proc-celery": True,
     "ezid-proc-crossref": True,
     "ezid-proc-datacite": True,
     "ezid-proc-download": True,
@@ -24,6 +25,7 @@ BACKGROUND_JOBS_PRD = {
 BACKGROUND_JOBS_STG = {
     "ezid-proc-binder": True,
     "ezid-proc-cleanup-async-queues": True,
+    "ezid-proc-celery": True,
     "ezid-proc-crossref": True,
     "ezid-proc-datacite": True,
     "ezid-proc-download": True,
@@ -234,8 +236,8 @@ def main():
 
     # add input and output filename arguments to the parser
     parser.add_argument('-e', '--env', type=str, required=True, choices=['test', 'dev', 'stg', 'prd'], help='Environment')
-    parser.add_argument('-u', '--user', type=str, required=True, help='user name')
-    parser.add_argument('-p', '--password', type=str, required=True, help='password')
+    parser.add_argument('-u', '--user', type=str, required=False, help='user name')
+    parser.add_argument('-p', '--password', type=str, required=False, help='password')
     parser.add_argument('-v', '--version', type=str, required=False, help='version')
  
     args = parser.parse_args()
@@ -243,6 +245,11 @@ def main():
     user = args.user
     password = args.password
     version = args.version
+
+    if user is None:
+        user = "apitest"
+    if password is None:
+        password = "apitest"
   
     base_urls = {
         "test": "http://127.0.0.1:8000",
