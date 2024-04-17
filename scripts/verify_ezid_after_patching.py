@@ -1,4 +1,3 @@
-
 import os
 
 import argparse
@@ -54,14 +53,19 @@ def get_status(url):
         err_msg = "HTTPError: " + str(e)[:200]
     return success, status_code, text, err_msg
 
-def post_data(url, user, password, data):
+def post_data(url, user, password, data, content_type=None):
     success = False
     status_code = -1
     text = ""
     err_msg = ""
 
+    if content_type == "form":
+        content_type = "application/x-www-form-urlencoded"
+    else:
+        content_type = "text/plain; charset=UTF-8"
+
     headers = {
-        "Content-Type": "text/plain; charset=UTF-8",
+        "Content-Type": content_type,
         "Authorization": "Basic " + base64.b64encode(f"{user}:{password}".encode('utf-8')).decode('utf-8'),
     }
     try:
@@ -230,6 +234,39 @@ def check_background_jobs(env, check_item_no):
             else:
                 print(f"info {check_item_no}.{i} - {job} is not running")
 
+def check_batch_download(user, password, base_url, check_item_no):
+    print("## Check batch download from S3")
+    data = {
+        'format': 'csv',
+        'type': 'ark',
+        'column': '_id',
+    }
+    url = f"{base_url}/download_request"
+
+    http_success, status_code, text, err_msg = post_data(url, user, password, data, content_type="form")
+    if http_success and status_code == 200:
+        # returned text:
+        # success: https://ezid-stg.cdlib.org/s3_download/xTqyrjZDJz9zYRMz.csv.gz
+        part_1 = text[:7]
+        s3_file_url = text[9:]
+        assert part_1, "success"
+
+        count = 0
+        success = False
+        while count < 5: 
+            success, status_code, text, err_msg = get_status(s3_file_url)
+            if success:
+                break
+            sleep(3)
+            count += 1
+
+        if success:
+            print(f"ok {check_item_no} - batch download file is available at: {s3_file_url}")
+        else:
+            print(f"error {check_item_no} - batch download failed: {s3_file_url} - status_code: {status_code}: {text}: {err_msg}")
+    else:
+        print(f"error {check_item_no} - batch download failed - status_code: {status_code}: {text}: {err_msg}")
+
 def main():
 
     parser = argparse.ArgumentParser(description='Get EZID records by identifier.')
@@ -253,7 +290,7 @@ def main():
   
     base_urls = {
         "test": "http://127.0.0.1:8000",
-        "dev": "http://uc3-ezidui01x2-dev.cdlib.org",
+        "dev": "https://ezid-dev.cdlib.org",
         "stg": "https://ezid-stg.cdlib.org",
         "prd": "https://ezid.cdlib.org"
     }
@@ -268,8 +305,11 @@ def main():
     verify_update_identifier_status(user, password, base_url, created_ids, check_item_no="4")
 
     check_background_jobs(env, check_item_no="5")
+
+    check_batch_download(user, password, base_url, check_item_no="6")
  
 
 
 if __name__ == "__main__":
     main()
+
