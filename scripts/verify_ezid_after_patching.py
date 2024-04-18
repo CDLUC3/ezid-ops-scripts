@@ -5,6 +5,7 @@ import requests
 import base64
 import re
 import subprocess
+import time
 
 BACKGROUND_JOBS_PRD = {
     "ezid-proc-binder": True,
@@ -36,13 +37,13 @@ BACKGROUND_JOBS_STG = {
     "ezid-proc-link-checker-update": False,
 }
 
-def get_status(url):
+def get_status(url, allow_redirects=False):
     success = False
     status_code = -1
     text = ""
     err_msg = ""
     try:
-        r = requests.get(url=url, allow_redirects=False)
+        r = requests.get(url=url, allow_redirects=allow_redirects)
         status_code = r.status_code
         r.raise_for_status()
         text = r.text
@@ -243,21 +244,23 @@ def check_batch_download(user, password, base_url, check_item_no):
     }
     url = f"{base_url}/download_request"
 
+    # post download requst
     http_success, status_code, text, err_msg = post_data(url, user, password, data, content_type="form")
     if http_success and status_code == 200:
-        # returned text:
+        # download request was successfully processed with "success" and downloadable url in the response body
         # success: https://ezid-stg.cdlib.org/s3_download/xTqyrjZDJz9zYRMz.csv.gz
         part_1 = text[:7]
         s3_file_url = text[9:]
         assert part_1, "success"
 
+        # batch download is processed asynchronously, wait until the file is ready for download
         count = 0
         success = False
         while count < 5: 
-            success, status_code, text, err_msg = get_status(s3_file_url)
+            success, status_code, text, err_msg = get_status(s3_file_url, allow_redirects=True)
             if success:
                 break
-            sleep(3)
+            time.sleep(3)
             count += 1
 
         if success:
