@@ -1,4 +1,3 @@
-
 import os
 
 import argparse
@@ -6,10 +5,12 @@ import requests
 import base64
 import re
 import subprocess
+import time
 
 BACKGROUND_JOBS_PRD = {
     "ezid-proc-binder": True,
     "ezid-proc-cleanup-async-queues": True,
+    "ezid-proc-celery": True,
     "ezid-proc-crossref": True,
     "ezid-proc-datacite": True,
     "ezid-proc-download": True,
@@ -24,6 +25,7 @@ BACKGROUND_JOBS_PRD = {
 BACKGROUND_JOBS_STG = {
     "ezid-proc-binder": True,
     "ezid-proc-cleanup-async-queues": True,
+    "ezid-proc-celery": True,
     "ezid-proc-crossref": True,
     "ezid-proc-datacite": True,
     "ezid-proc-download": True,
@@ -35,13 +37,13 @@ BACKGROUND_JOBS_STG = {
     "ezid-proc-link-checker-update": False,
 }
 
-def get_status(url):
+def get_status(url, allow_redirects=False):
     success = False
     status_code = -1
     text = ""
     err_msg = ""
     try:
-        r = requests.get(url=url, allow_redirects=False)
+        r = requests.get(url=url, allow_redirects=allow_redirects)
         status_code = r.status_code
         r.raise_for_status()
         text = r.text
@@ -52,14 +54,19 @@ def get_status(url):
         err_msg = "HTTPError: " + str(e)[:200]
     return success, status_code, text, err_msg
 
-def post_data(url, user, password, data):
+def post_data(url, user, password, data, content_type=None):
     success = False
     status_code = -1
     text = ""
     err_msg = ""
 
+    if content_type == "form":
+        content_type = "application/x-www-form-urlencoded"
+    else:
+        content_type = "text/plain; charset=UTF-8"
+
     headers = {
-        "Content-Type": "text/plain; charset=UTF-8",
+        "Content-Type": content_type,
         "Authorization": "Basic " + base64.b64encode(f"{user}:{password}".encode('utf-8')).decode('utf-8'),
     }
     try:
@@ -228,14 +235,49 @@ def check_background_jobs(env, check_item_no):
             else:
                 print(f"info {check_item_no}.{i} - {job} is not running")
 
+def check_batch_download(user, password, base_url, check_item_no):
+    print("## Check batch download from S3")
+    data = {
+        'format': 'csv',
+        'type': 'ark',
+        'column': '_id',
+    }
+    url = f"{base_url}/download_request"
+
+    # post download requst
+    http_success, status_code, text, err_msg = post_data(url, user, password, data, content_type="form")
+    if http_success and status_code == 200:
+        # download request was successfully processed with "success" and downloadable url in the response body
+        # success: https://ezid-stg.cdlib.org/s3_download/xTqyrjZDJz9zYRMz.csv.gz
+        part_1 = text[:7]
+        s3_file_url = text[9:]
+        assert part_1, "success"
+
+        # batch download is processed asynchronously, wait until the file is ready for download
+        count = 0
+        success = False
+        while count < 5: 
+            success, status_code, text, err_msg = get_status(s3_file_url, allow_redirects=True)
+            if success:
+                break
+            time.sleep(3)
+            count += 1
+
+        if success:
+            print(f"ok {check_item_no} - batch download file is available at: {s3_file_url}")
+        else:
+            print(f"error {check_item_no} - batch download failed: {s3_file_url} - status_code: {status_code}: {text}: {err_msg}")
+    else:
+        print(f"error {check_item_no} - batch download failed - status_code: {status_code}: {text}: {err_msg}")
+
 def main():
 
     parser = argparse.ArgumentParser(description='Get EZID records by identifier.')
 
     # add input and output filename arguments to the parser
     parser.add_argument('-e', '--env', type=str, required=True, choices=['test', 'dev', 'stg', 'prd'], help='Environment')
-    parser.add_argument('-u', '--user', type=str, required=True, help='user name')
-    parser.add_argument('-p', '--password', type=str, required=True, help='password')
+    parser.add_argument('-u', '--user', type=str, required=False, help='user name')
+    parser.add_argument('-p', '--password', type=str, required=False, help='password')
     parser.add_argument('-v', '--version', type=str, required=False, help='version')
  
     args = parser.parse_args()
@@ -243,10 +285,15 @@ def main():
     user = args.user
     password = args.password
     version = args.version
+
+    if user is None:
+        user = "apitest"
+    if password is None:
+        password = "apitest"
   
     base_urls = {
         "test": "http://127.0.0.1:8000",
-        "dev": "http://uc3-ezidui01x2-dev.cdlib.org",
+        "dev": "https://ezid-dev.cdlib.org",
         "stg": "https://ezid-stg.cdlib.org",
         "prd": "https://ezid.cdlib.org"
     }
@@ -261,8 +308,11 @@ def main():
     verify_update_identifier_status(user, password, base_url, created_ids, check_item_no="4")
 
     check_background_jobs(env, check_item_no="5")
+
+    check_batch_download(user, password, base_url, check_item_no="6")
  
 
 
 if __name__ == "__main__":
     main()
+
