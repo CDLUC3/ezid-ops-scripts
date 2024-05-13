@@ -29,9 +29,10 @@ def ui_test_login_logout(base_url, user, password):
     # submit login
     login_button = driver.find_element(By.ID, "login")
     login_button.click()
-    #wait = WebDriverWait(driver, 3)
-
-    assert "Password required" in driver.page_source
+    
+    wait = WebDriverWait(driver, 10)
+    alert_text = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "alert-text")))
+    assert "Password required" in alert_text.text
 
     password_input = driver.find_element("xpath", "//input[@type='password' and @class='fcontrol__text-field-inline']")
     password_input.clear()
@@ -40,8 +41,10 @@ def ui_test_login_logout(base_url, user, password):
     # submit login
     login_button = driver.find_element("xpath", "//button[@class='button__primary general__form-submit']")
     login_button.click()
-
-    assert "Login failed" in driver.page_source
+    
+    wait = WebDriverWait(driver, 10)
+    alert_text = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "alert-text")))
+    assert "Login failed" in alert_text.text
 
     password_input = driver.find_element("xpath", "//input[@type='password' and @class='fcontrol__text-field-inline']")
     password_input.clear()
@@ -52,7 +55,13 @@ def ui_test_login_logout(base_url, user, password):
     login_button = driver.find_element("xpath", "//button[@class='button__primary general__form-submit']")
     login_button.click()
 
+    wait = WebDriverWait(driver, 10)
+    alert_text = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "alert-text")))
+
+    assert "Login successful" in alert_text.text
     assert "Welcome apitest" in driver.page_source
+
+    time.sleep(10)
 
     driver.close()
 
