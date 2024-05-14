@@ -1,4 +1,4 @@
-# ui_test_login.py
+# ezid_ui_tests.py
 import time
 import argparse
 
