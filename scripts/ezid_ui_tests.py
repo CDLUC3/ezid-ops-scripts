@@ -147,6 +147,8 @@ def ui_test_contact(base_url):
     browser = webdriver.Chrome()
     browser.get(base_url)
 
+    time.sleep(1)
+
     contact_link = browser.find_element(By.XPATH, "//a[@class='header__nav-item-contact' and contains(text(), 'Contact') ]")
     contact_link.click()
 
@@ -177,15 +179,16 @@ def ui_test_contact(base_url):
     dropdown_lists = browser.find_element(By.ID, "id_question")
     dropdown_lists.send_keys("2")
 
-    time.sleep(2)
-
-    wait = WebDriverWait(browser, 10)
     submit_button = browser.find_element(By.XPATH, "//button[@class='button__primary general__form-submit']")
-
     browser.execute_script("arguments[0].scrollIntoView();", submit_button)
-    # scroll down a little more otherwise will get error "Element is not clickable at point (367, 863)"
-    browser.execute_script("window.scrollBy(0, -1000);")    
 
+ # use wait until didn't work - got error "Element is not clickable at point (367, 863)"
+ # however using time.sleep() worked
+ # so, need to figure out what is preventing the submit button become clickable
+ #   wait = WebDriverWait(browser, 10)
+ #   submit_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@class='button__primary general__form-submit']")))
+    
+    time.sleep(1)
     submit_button.click()
 
     if base_url == "http://127.0.0.1:8000":
