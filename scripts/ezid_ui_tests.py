@@ -11,6 +11,7 @@ from selenium.webdriver.support.ui import Select
 
 
 def ui_test_login_logout(base_url, user, password):
+    print("Testing login/logout ...")
     browser = webdriver.Chrome()
     browser.get(base_url)
 
@@ -25,6 +26,7 @@ def ui_test_login_logout(base_url, user, password):
     # Enter username and password
     username_input.send_keys(user)
     password_input.send_keys("")
+    time.sleep(2)
     
     # submit login
     login_button = browser.find_element(By.ID, "login")
@@ -33,10 +35,12 @@ def ui_test_login_logout(base_url, user, password):
     wait = WebDriverWait(browser, 10)
     alert_text = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "alert-text")))
     assert "Password required" in alert_text.text
+    time.sleep(2)
 
     password_input = browser.find_element("xpath", "//input[@type='password' and @class='fcontrol__text-field-inline']")
     password_input.clear()
     password_input.send_keys("xxxx")
+    time.sleep(2)
     
     # submit login
     login_button = browser.find_element("xpath", "//button[@class='button__primary general__form-submit']")
@@ -45,11 +49,11 @@ def ui_test_login_logout(base_url, user, password):
     wait = WebDriverWait(browser, 10)
     alert_text = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "alert-text")))
     assert "Login failed" in alert_text.text
+    time.sleep(2)
 
     password_input = browser.find_element("xpath", "//input[@type='password' and @class='fcontrol__text-field-inline']")
     password_input.clear()
     password_input.send_keys(password)
-
     time.sleep(2)
 
     login_button = browser.find_element("xpath", "//button[@class='button__primary general__form-submit']")
@@ -60,7 +64,6 @@ def ui_test_login_logout(base_url, user, password):
 
     assert "Login successful" in alert_text.text
     assert "Welcome apitest" in browser.page_source
-
     time.sleep(2)
 
     logout_button = browser.find_element("xpath", "//button[@class='header__loginout-link']")
@@ -69,13 +72,12 @@ def ui_test_login_logout(base_url, user, password):
     wait = WebDriverWait(browser, 10)
     alert_text = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "alert-text")))
     assert "You have been logged out" in alert_text.text
-
-    time.sleep(2)
-
-
-    browser.close()
+    
+    time.sleep(3)
+    browser.quit()
 
 def ui_test_creator_ark(base_url):
+    print("Testing create ARK ...")
     browser = webdriver.Chrome()
     browser.get(base_url)
 
@@ -88,7 +90,7 @@ def ui_test_creator_ark(base_url):
     when_input = browser.find_element(By.ID, "erc.when")
     when_input.send_keys("2024")
     
-    time.sleep(3)
+    time.sleep(2)
 
     create_button = browser.find_element(By.XPATH, "//button[@class='home__button-primary']")
     create_button.click()
@@ -100,10 +102,11 @@ def ui_test_creator_ark(base_url):
     assert "Identifier Details" in browser.page_source
     assert "ark:/99999/fk4" in browser.page_source
 
-    time.sleep(5)
-    browser.close()
+    time.sleep(3)
+    browser.quit()
 
 def ui_test_creator_doi(base_url):
+    print("Testing create DOI ...")
     browser = webdriver.Chrome()
     browser.get(base_url)
 
@@ -128,7 +131,7 @@ def ui_test_creator_doi(base_url):
     resource_type = browser.find_element(By.ID, "datacite.resourcetype")
     resource_type.send_keys("Book")
     
-    time.sleep(3)
+    time.sleep(2)
 
     create_button = browser.find_element(By.XPATH, "//button[@class='home__button-primary']")
     create_button.click()
@@ -140,10 +143,11 @@ def ui_test_creator_doi(base_url):
     assert "Identifier Details" in browser.page_source
     assert "doi:10.5072/FK2" in browser.page_source
 
-    time.sleep(5)
-    browser.close()
+    time.sleep(3)
+    browser.quit()
 
 def ui_test_contact(base_url):
+    print("Testing the contact EZID form ...")
     browser = webdriver.Chrome()
     browser.get(base_url)
 
