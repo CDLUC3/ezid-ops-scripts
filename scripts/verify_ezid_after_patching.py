@@ -256,11 +256,14 @@ def check_batch_download(user, password, base_url, check_item_no):
         # batch download is processed asynchronously, wait until the file is ready for download
         count = 0
         success = False
-        while count < 10: 
+        wait_time = 0
+        while count < 60: 
             success, status_code, text, err_msg = get_status(s3_file_url, allow_redirects=True)
             if success:
                 break
             time.sleep(5)
+            wait_time += 5
+            print(f"waiting for file to become available: {wait_time}s passed")
             count += 1
 
         if success:
