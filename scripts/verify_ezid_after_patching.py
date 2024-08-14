@@ -8,9 +8,7 @@ import subprocess
 import time
 
 BACKGROUND_JOBS_PRD = {
-    "ezid-proc-binder": True,
     "ezid-proc-cleanup-async-queues": True,
-    "ezid-proc-celery": True,
     "ezid-proc-crossref": True,
     "ezid-proc-datacite": True,
     "ezid-proc-download": True,
@@ -23,9 +21,7 @@ BACKGROUND_JOBS_PRD = {
 }
 
 BACKGROUND_JOBS_STG = {
-    "ezid-proc-binder": True,
     "ezid-proc-cleanup-async-queues": True,
-    "ezid-proc-celery": True,
     "ezid-proc-crossref": True,
     "ezid-proc-datacite": True,
     "ezid-proc-download": True,
