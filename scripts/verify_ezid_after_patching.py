@@ -170,9 +170,9 @@ def verify_ezid_version(base_url, version, check_item_no):
 
 def verify_search_function(base_url, check_item_no):
     item = "Verify search function"
-    search_url = "search?filtered=t&title=California+Digital+Library&object_type=Dataset"
+    search_url = "search?filtered=t&identifier=ark%3A%2F13030%2Fm5z94194"
     success, status_code, text, err_msg = get_status(f"{base_url}/{search_url}")
-    if success:
+    if success and status_code == 200:
         print(f"ok {check_item_no} - {item}")
     else:
         print(f"error {check_item_no} - {item} - code({status_code}): {err_msg}")
