@@ -1,14 +1,14 @@
 import os
-import argparse
-import requests
+import csv
 import json
 import logging
-import csv
+import argparse
+import requests
+import threading
+import concurrent.futures
 from collections import defaultdict, Counter
 from urllib.parse import urlparse, parse_qs, urlencode
 from tqdm import tqdm
-import concurrent.futures
-import threading
 
 
 def setup_logging(verbose):
@@ -27,7 +27,8 @@ def load_config(config_file):
         config = json.load(f)
     queries = {k: v['query'] for k, v in config.get('QUERIES', {}).items()}
     client_ids = config.get('CLIENT_IDS', [])
-    return queries, client_ids, len(client_ids)
+    save_json = config.get('SAVE_JSON', False)
+    return queries, client_ids, len(client_ids), save_json
 
 
 def get_total_work(client_ids, queries):
@@ -48,7 +49,19 @@ def retrieve_datacite_records(url="https://api.datacite.org/dois", params=None, 
         return False, status_code, "", err_msg
 
 
-def fetch_all_pages(params, client_id, query_key):
+def save_json_response(json_data, client_id, query_key, page_number, base_dir):
+    dir_path = os.path.join(base_dir, 'json', client_id, query_key)
+    os.makedirs(dir_path, exist_ok=True)
+    file_path = os.path.join(dir_path, f'page_{page_number}.json')
+    try:
+        with open(file_path, 'w') as f:
+            json.dump(json_data, f, indent=2)
+        logging.info(f"Saved JSON response for client {client_id}, query {query_key}, page {page_number}")
+    except IOError as e:
+        logging.error(f"Error saving JSON response: {str(e)}")
+
+
+def fetch_all_pages(params, client_id, query_key, save_json, output_dir):
     all_data = []
     cursor = '1'
     page_number = 1
@@ -64,6 +77,9 @@ def fetch_all_pages(params, client_id, query_key):
             logging.error(f"Client {client_id}, Query {query_key}: Failed to fetch page {page_number}. Status: {status_code}, Error: {err_msg}")
             break
         results = json.loads(text)
+        if save_json:
+            save_json_response(results, client_id, query_key,
+                               page_number, output_dir)
         current_page_data = results.get('data', [])
         if not current_page_data:
             logging.info(f"Client {client_id}, Query {query_key}: No more data received. Ending pagination.")
@@ -98,13 +114,14 @@ def extract_shoulder(doi):
     return None
 
 
-def process_client(client_id, query_key, query, output_dir):
+def process_client(client_id, query_key, query, output_dir, save_json):
     params = {
         'client-id': client_id,
         'page[size]': 1000
     }
     params.update(dict(param.split('=') for param in query.split('&')))
-    all_records = fetch_all_pages(params, client_id, query_key)
+    all_records = fetch_all_pages(
+        params, client_id, query_key, save_json, output_dir)
     dois = extract_dois(all_records)
     if not dois:
         logging.info(f"Client {client_id}, Query {query_key}: No results. Skipping file creation.")
@@ -113,7 +130,7 @@ def process_client(client_id, query_key, query, output_dir):
     client_dir = os.path.join(output_dir, client_id)
     os.makedirs(client_dir, exist_ok=True)
     doi_filename = os.path.join(client_dir, f"{query_key}.csv")
-    with open(doi_filename, 'w') as f_out:
+    with open(doi_filename, 'w', newline='') as f_out:
         writer = csv.writer(f_out)
         writer.writerow(["DOI"])
         for doi in dois:
@@ -125,7 +142,7 @@ def process_client(client_id, query_key, query, output_dir):
     shoulder_counts = Counter(shoulders)
 
     shoulder_filename = os.path.join(client_dir, f"{query_key}_unique_shoulders.csv")
-    with open(shoulder_filename, 'w') as f_out:
+    with open(shoulder_filename, 'w', newline='') as f_out:
         writer = csv.writer(f_out)
         writer.writerow(["Unique_Shoulder", "Count"])
         for shoulder in unique_shoulders:
@@ -136,17 +153,17 @@ def process_client(client_id, query_key, query, output_dir):
     return len(dois), len(unique_shoulders)
 
 
-def process_client_query(client_id, queries, output_dir):
+def process_client_query(client_id, queries, output_dir, save_json):
     client_stats = {}
     for query_key, query in queries.items():
         doi_count, shoulder_count = process_client(
-            client_id, query_key, query, output_dir)
+            client_id, query_key, query, output_dir, save_json)
         client_stats[(client_id, query_key)] = [doi_count, shoulder_count]
     return client_stats
 
 
 def log_aggregate_statistics(stats, stats_file):
-    with open(stats_file, 'w') as f_out:
+    with open(stats_file, 'w', newline='') as f_out:
         writer = csv.writer(f_out)
         writer.writerow(
             ["Client", "Query", "DOI Count", "Unique Shoulder Count"])
@@ -168,6 +185,8 @@ def parse_arguments():
                         help='Enable verbose logging')
     parser.add_argument('-p', '--parallel', action='store_true',
                         help='Enable parallel processing')
+    parser.add_argument('-j', '--save_json', action='store_true',
+                        help='Enable saving of raw JSON responses')
     return parser.parse_args()
 
 
@@ -177,49 +196,42 @@ def main():
     os.makedirs(args.output_dir, exist_ok=True)
     if not os.path.isabs(args.stats_file):
         args.stats_file = os.path.join(args.output_dir, args.stats_file)
-
-    QUERIES, CLIENT_IDS, num_clients = load_config(args.config)
+    QUERIES, CLIENT_IDS, num_clients, save_json = load_config(args.config)
+    save_json = save_json or args.save_json
     total_work = get_total_work(CLIENT_IDS, QUERIES)
-
     if args.parallel:
         max_workers = min(32, os.cpu_count() + 4, total_work)
         logging.info(f"Using {max_workers} workers")
     else:
         max_workers = 1
         logging.info("Running in sequential mode")
-
     logging.info(f"Total clients: {num_clients}")
     logging.info(f"Total queries: {len(QUERIES)}")
     logging.info(f"Total work items: {total_work}")
-
+    logging.info(f"Saving JSON responses: {'Yes' if save_json else 'No'}")
     stats = defaultdict(lambda: [0, 0])
-
     if args.parallel:
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             future_to_client = {
-                executor.submit(process_client_query, client_id, QUERIES, args.output_dir): client_id
+                executor.submit(process_client_query, client_id, QUERIES, args.output_dir, save_json): client_id
                 for client_id in CLIENT_IDS
             }
-
-            completed_tasks = 0
             with tqdm(total=total_work, desc="Processing clients and queries") as pbar:
                 for future in concurrent.futures.as_completed(future_to_client):
                     client_id = future_to_client[future]
                     try:
                         client_stats = future.result()
                         stats.update(client_stats)
-                        completed_tasks += len(QUERIES)
                         pbar.update(len(QUERIES))
                     except Exception as exc:
                         logging.error(f'{client_id} generated an exception: {exc}')
-                        completed_tasks += 1
-                        pbar.update(1)
+                        pbar.update(len(QUERIES))
     else:
         with tqdm(total=total_work, desc="Processing clients and queries") as pbar:
             for client_id in CLIENT_IDS:
                 try:
                     client_stats = process_client_query(
-                        client_id, QUERIES, args.output_dir)
+                        client_id, QUERIES, args.output_dir, save_json)
                     stats.update(client_stats)
                     pbar.update(len(QUERIES))
                 except Exception as exc:
@@ -232,6 +244,8 @@ def main():
         for query_key in QUERIES.keys():
             logging.info(f"- {os.path.join(args.output_dir, client_id, query_key + '.csv')}")
             logging.info(f"- {os.path.join(args.output_dir, client_id, query_key + '_unique_shoulders.csv')}")
+    if save_json:
+        logging.info(f"JSON responses saved in: {os.path.join(args.output_dir, 'json')}")
     logging.info(f"Aggregate statistics: {args.stats_file}")
 
 
