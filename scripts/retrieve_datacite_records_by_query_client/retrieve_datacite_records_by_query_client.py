@@ -28,7 +28,8 @@ def load_config(config_file):
     queries = {k: v['query'] for k, v in config.get('QUERIES', {}).items()}
     client_ids = config.get('CLIENT_IDS', [])
     save_json = config.get('SAVE_JSON', False)
-    return queries, client_ids, len(client_ids), save_json
+    process_shoulders = config.get('PROCESS_SHOULDERS', False)
+    return queries, client_ids, len(client_ids), save_json, process_shoulders
 
 
 def get_total_work(client_ids, queries):
@@ -114,7 +115,31 @@ def extract_shoulder(doi):
     return None
 
 
-def process_client(client_id, query_key, query, output_dir, save_json):
+def organize_dois_by_shoulder(dois, client_id, query_key, output_dir, process_shoulders):
+    if not process_shoulders:
+        return 0
+    shoulder_dir = os.path.join(output_dir, client_id, f"{query_key}_by_shoulders")
+    os.makedirs(shoulder_dir, exist_ok=True)
+    shoulders = defaultdict(list)
+    for doi in dois:
+        shoulder = extract_shoulder(doi)
+        if shoulder:
+            shoulders[shoulder].append(doi)
+        else:
+            logging.warning(f"Invalid shoulder for DOI: {doi}")
+    for shoulder, doi_list in shoulders.items():
+        safe_shoulder = shoulder.replace('/', '_')
+        shoulder_file = os.path.join(shoulder_dir, f"{safe_shoulder}.csv")
+        with open(shoulder_file, 'w') as f_out:
+            writer = csv.writer(f_out)
+            writer.writerow(["DOI"])
+            for doi in doi_list:
+                writer.writerow([doi])
+    logging.info(f"Organized DOIs by shoulder for client {client_id}, query {query_key}")
+    return len(shoulders)
+
+
+def process_client(client_id, query_key, query, output_dir, save_json, process_shoulders):
     params = {
         'client-id': client_id,
         'page[size]': 1000
@@ -125,45 +150,52 @@ def process_client(client_id, query_key, query, output_dir, save_json):
     dois = extract_dois(all_records)
     if not dois:
         logging.info(f"Client {client_id}, Query {query_key}: No results. Skipping file creation.")
-        return 0, 0
-
+        return 0, 0, {}
     client_dir = os.path.join(output_dir, client_id)
     os.makedirs(client_dir, exist_ok=True)
-    doi_filename = os.path.join(client_dir, f"{query_key}.csv")
-    with open(doi_filename, 'w', newline='') as f_out:
+    doi_filename = os.path.join(client_dir, f"{query_key}_{client_id}.csv")
+    with open(doi_filename, 'w') as f_out:
         writer = csv.writer(f_out)
         writer.writerow(["DOI"])
         for doi in dois:
             writer.writerow([doi])
+    logging.info(f"Client {client_id}, Query {query_key}: Processed. DOIs in {doi_filename}")
+    if process_shoulders:
+        shoulders = [extract_shoulder(doi)
+                     for doi in dois if extract_shoulder(doi)]
+        unique_shoulders = sorted(set(shoulders))
+        shoulder_counts = Counter(shoulders)
+        shoulder_filename = os.path.join(client_dir, f"{query_key}_{client_id}_unique_shoulders.csv")
+        with open(shoulder_filename, 'w') as f_out:
+            writer = csv.writer(f_out)
+            writer.writerow(["Unique_Shoulder", "Count"])
+            for shoulder in unique_shoulders:
+                writer.writerow([shoulder, shoulder_counts[shoulder]])
+        num_shoulder_files = organize_dois_by_shoulder(
+            dois, client_id, query_key, output_dir, process_shoulders)
+        logging.info(f"Shoulders in {shoulder_filename}")
+        logging.info(f"Created {num_shoulder_files} shoulder-specific files in {os.path.join(client_dir, f'{query_key}_by_shoulders')}")
+        return len(dois), len(unique_shoulders), shoulder_counts
+    else:
+        logging.info(
+            f"Client {client_id}, Query {query_key}: Shoulder processing is disabled. Skipping shoulder-specific outputs.")
+        return len(dois), 0, {}
 
-    shoulders = [extract_shoulder(doi)
-                 for doi in dois if extract_shoulder(doi)]
-    unique_shoulders = sorted(set(shoulders))
-    shoulder_counts = Counter(shoulders)
 
-    shoulder_filename = os.path.join(client_dir, f"{query_key}_unique_shoulders.csv")
-    with open(shoulder_filename, 'w', newline='') as f_out:
-        writer = csv.writer(f_out)
-        writer.writerow(["Unique_Shoulder", "Count"])
-        for shoulder in unique_shoulders:
-            writer.writerow([shoulder, shoulder_counts[shoulder]])
-
-    logging.info(f"Client {client_id}, Query {query_key}: Processed. DOIs in {doi_filename}, Shoulders in {shoulder_filename}")
-
-    return len(dois), len(unique_shoulders)
-
-
-def process_client_query(client_id, queries, output_dir, save_json):
+def process_client_query(client_id, queries, output_dir, save_json, process_shoulders):
     client_stats = {}
+    client_shoulders = {}
     for query_key, query in queries.items():
-        doi_count, shoulder_count = process_client(
-            client_id, query_key, query, output_dir, save_json)
+        doi_count, shoulder_count, shoulder_data = process_client(
+            client_id, query_key, query, output_dir, save_json, process_shoulders)
         client_stats[(client_id, query_key)] = [doi_count, shoulder_count]
-    return client_stats
+        if process_shoulders:
+            client_shoulders[(client_id, query_key)] = shoulder_data
+    return client_stats, client_shoulders if process_shoulders else None
 
 
 def log_aggregate_statistics(stats, stats_file):
-    with open(stats_file, 'w', newline='') as f_out:
+    with open(stats_file, 'w') as f_out:
         writer = csv.writer(f_out)
         writer.writerow(
             ["Client", "Query", "DOI Count", "Unique Shoulder Count"])
@@ -172,12 +204,29 @@ def log_aggregate_statistics(stats, stats_file):
     logging.info(f"Aggregate statistics written to {stats_file}")
 
 
+def aggregate_shoulders(all_shoulder_data):
+    aggregated_shoulders = defaultdict(int)
+    for (client_id, query_key), shoulder_counts in all_shoulder_data.items():
+        for shoulder, count in shoulder_counts.items():
+            aggregated_shoulders[(client_id, query_key, shoulder)] += count
+    return aggregated_shoulders
+
+
+def write_aggregate_shoulders(aggregated_shoulders, output_file):
+    with open(output_file, 'w') as f_out:
+        writer = csv.writer(f_out)
+        writer.writerow(["Client", "Query", "Unique_Shoulder", "Count"])
+        for (client_id, query_key, shoulder), count in sorted(aggregated_shoulders.items()):
+            writer.writerow([client_id, query_key, shoulder, count])
+    logging.info(f"Aggregate unique shoulders written to {output_file}")
+
+
 def parse_arguments():
     parser = argparse.ArgumentParser(
         description='Retrieve DataCite JSON records and generate DOI list.')
     parser.add_argument('-d', '--output_dir', default="results", type=str,
                         help='Output directory: directory where files will be saved.')
-    parser.add_argument('-s', '--stats_file', default="aggregate_stats.csv", type=str,
+    parser.add_argument('-a', '--aggregate_stats_file', default="aggregate_stats.csv", type=str,
                         help='Statistics file: output file containing aggregate statistics.')
     parser.add_argument('-c', '--config', default="config.json", required=True,
                         type=str, help='Configuration file containing QUERIES and CLIENT_IDS')
@@ -187,6 +236,8 @@ def parse_arguments():
                         help='Enable parallel processing')
     parser.add_argument('-j', '--save_json', action='store_true',
                         help='Enable saving of raw JSON responses')
+    parser.add_argument('-s', '--shoulder', action='store_true',
+                        help='Enable shoulder-specific outputs')
     return parser.parse_args()
 
 
@@ -194,10 +245,13 @@ def main():
     args = parse_arguments()
     setup_logging(args.verbose)
     os.makedirs(args.output_dir, exist_ok=True)
-    if not os.path.isabs(args.stats_file):
-        args.stats_file = os.path.join(args.output_dir, args.stats_file)
-    QUERIES, CLIENT_IDS, num_clients, save_json = load_config(args.config)
+    if not os.path.isabs(args.aggregate_stats_file):
+        args.aggregate_stats_file = os.path.join(
+            args.output_dir, args.aggregate_stats_file)
+    QUERIES, CLIENT_IDS, num_clients, save_json, config_shoulders = load_config(
+        args.config)
     save_json = save_json or args.save_json
+    process_shoulders = args.shoulder or config_shoulders
     total_work = get_total_work(CLIENT_IDS, QUERIES)
     if args.parallel:
         max_workers = min(32, os.cpu_count() + 4, total_work)
@@ -209,19 +263,23 @@ def main():
     logging.info(f"Total queries: {len(QUERIES)}")
     logging.info(f"Total work items: {total_work}")
     logging.info(f"Saving JSON responses: {'Yes' if save_json else 'No'}")
+    logging.info(f"Processing shoulders: {'Yes' if process_shoulders else 'No'}")
     stats = defaultdict(lambda: [0, 0])
+    all_shoulder_data = {}
     if args.parallel:
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             future_to_client = {
-                executor.submit(process_client_query, client_id, QUERIES, args.output_dir, save_json): client_id
+                executor.submit(process_client_query, client_id, QUERIES, args.output_dir, save_json, process_shoulders): client_id
                 for client_id in CLIENT_IDS
             }
             with tqdm(total=total_work, desc="Processing clients and queries") as pbar:
                 for future in concurrent.futures.as_completed(future_to_client):
                     client_id = future_to_client[future]
                     try:
-                        client_stats = future.result()
+                        client_stats, client_shoulders = future.result()
                         stats.update(client_stats)
+                        if process_shoulders and client_shoulders is not None:
+                            all_shoulder_data.update(client_shoulders)
                         pbar.update(len(QUERIES))
                     except Exception as exc:
                         logging.error(f'{client_id} generated an exception: {exc}')
@@ -230,23 +288,40 @@ def main():
         with tqdm(total=total_work, desc="Processing clients and queries") as pbar:
             for client_id in CLIENT_IDS:
                 try:
-                    client_stats = process_client_query(
-                        client_id, QUERIES, args.output_dir, save_json)
+                    client_stats, client_shoulders = process_client_query(
+                        client_id, QUERIES, args.output_dir, save_json, process_shoulders)
                     stats.update(client_stats)
+                    if process_shoulders and client_shoulders is not None:
+                        all_shoulder_data.update(client_shoulders)
                     pbar.update(len(QUERIES))
                 except Exception as exc:
                     logging.error(f'{client_id} generated an exception: {exc}')
                     pbar.update(len(QUERIES))
 
-    log_aggregate_statistics(stats, args.stats_file)
+    log_aggregate_statistics(stats, args.aggregate_stats_file)
+
+    if process_shoulders:
+        aggregated_shoulders = aggregate_shoulders(all_shoulder_data)
+        aggregate_shoulders_file = os.path.join(
+            args.output_dir, "aggregate_unique_shoulders.csv")
+        write_aggregate_shoulders(
+            aggregated_shoulders, aggregate_shoulders_file)
+
     logging.info("Processing complete. Results are in the following files:")
     for client_id in CLIENT_IDS:
         for query_key in QUERIES.keys():
-            logging.info(f"- {os.path.join(args.output_dir, client_id, query_key + '.csv')}")
-            logging.info(f"- {os.path.join(args.output_dir, client_id, query_key + '_unique_shoulders.csv')}")
+            logging.info(f"- {os.path.join(args.output_dir, client_id, f'{query_key}_{client_id}.csv')}")
+            if process_shoulders:
+                logging.info(f"- {os.path.join(args.output_dir, client_id, f'{query_key}_{client_id}_unique_shoulders.csv')}")
+                logging.info(f"- {os.path.join(args.output_dir, client_id, f'{query_key}_by_shoulders')} (directory)")
     if save_json:
         logging.info(f"JSON responses saved in: {os.path.join(args.output_dir, 'json')}")
-    logging.info(f"Aggregate statistics: {args.stats_file}")
+    logging.info(f"Aggregate statistics: {args.aggregate_stats_file}")
+    if process_shoulders:
+        logging.info(f"Aggregate unique shoulders: {aggregate_shoulders_file}")
+    else:
+        logging.info(
+            "Shoulder processing was disabled. No shoulder-specific outputs were generated.")
 
 
 if __name__ == "__main__":
