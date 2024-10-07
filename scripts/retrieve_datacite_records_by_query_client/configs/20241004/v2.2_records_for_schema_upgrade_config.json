@@ -1,0 +1,18 @@
+{
+    "QUERIES": {
+        "v2": {
+            "query": "schema-version=2.2",
+            "description": "Get all records using DataCite schema version 2.2 for the specified client."
+        },
+        "v2.2_wo_res_type_gen": {
+            "query": "schema-version=2.2&query=NOT%20types.resourceTypeGeneral:*",
+            "description": "Get records using DataCite schema version 2.2 that don't have a general resource type specified."
+        },
+        "v2.2_wt_contrib_funder": {
+            "query": "schema-version=2.2&query=contributors.contributorType:Funder",
+            "description": "Get records using DataCite schema version 2.2 that have a funder listed as a contributor."
+        }
+    },
+    "CLIENT_IDS": ["cdl.ucsd","cdl.ucb","cdl.ucsb","cdl.cdl","cdl.ucla", "cdl.ucr","cdl.uci","cdl.ucsc","cdl.ucd","cdl.ucsf","cdl.ucm"],
+    "CLIENT_DESCRIPTION": "All UC DataCite clients"
+}
