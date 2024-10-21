@@ -26,7 +26,7 @@ pw="$2"
 if [[ "$env" == "dev" ]]; then
   host='rds-uc3-ezid1-dev.cmcguhglinoa.us-west-2.rds.amazonaws.com'
 elif [[ "$env" == "stg" ]]; then
-  host='rds-ias-ezid-search3-stg.cmcguhglinoa.us-west-2.rds.amazonaws.com'
+  host='rds-uc3-ezid1-stg.cmcguhglinoa.us-west-2.rds.amazonaws.com'
 elif [[ "$env" == "prd" ]]; then
   host='rds-uc3-ezid5-prd.cmcguhglinoa.us-west-2.rds.amazonaws.com'
 else
@@ -55,7 +55,10 @@ dump() {
     file="$dump_file_dir/${table}_table_dump_${timestamp}.sql"
     printf "Dumping queue table ${table} to file: ${file}\n"
     cat /dev/null >"$file"
-    mysqldump > "$file" "$db" "$table" --user="$user" --password="$pw" --host="$host" --no-tablespaces --set-gtid-purged=OFF
+    # mysqldump on the ezid instances is a MariaDB version which does not support --set-gtid-purged=OFF
+    # comment our GTID related settings when restoring a table from dump file without --set-gtid-purged=OFF
+    # mysqldump > "$file" "$db" "$table" --user="$user" --password="$pw" --host="$host" --no-tablespaces --set-gtid-purged=OFF
+    mysqldump > "$file" "$db" "$table" --user="$user" --password="$pw" --host="$host" --no-tablespaces
   done
 }
 
