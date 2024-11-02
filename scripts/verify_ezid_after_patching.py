@@ -145,9 +145,9 @@ def verify_ezid_status(base_url, check_item_no):
             assert text == expected_text
             print(f"ok {check_item_no} - {item}")
         except AssertionError as e:
-            print(f"error {check_item_no} - {item} - AssertionError: returned text \"{text}\" does not match expected text: \"{expected_text}\"")
+            print(f"Error {check_item_no} - {item} - AssertionError: returned text \"{text}\" does not match expected text: \"{expected_text}\"")
     else:
-        print(f"error {check_item_no} - {item} - code({status_code}): {err_msg}")
+        print(f"Error {check_item_no} - {item} - code({status_code}): {err_msg}")
 
 def verify_ezid_version(base_url, version, check_item_no):
     item = "Verify EZID version"
@@ -160,9 +160,9 @@ def verify_ezid_version(base_url, version, check_item_no):
             else:
                 print(f"info {check_item_no} - EZID version - {text}")
         except AssertionError as e:
-            print(f"error {check_item_no} - {item} - AssertionError: returned text \"{text}\" does not match expected text: \"{version}\"")
+            print(f"Error {check_item_no} - {item} - AssertionError: returned text \"{text}\" does not match expected text: \"{version}\"")
     else:
-        print(f"error {check_item_no} - {item} - code({status_code}): {err_msg}")
+        print(f"Error {check_item_no} - {item} - code({status_code}): {err_msg}")
 
 def verify_search_function(base_url, check_item_no):
     item = "Verify search function"
@@ -171,7 +171,7 @@ def verify_search_function(base_url, check_item_no):
     if success and status_code == 200:
         print(f"ok {check_item_no} - {item}")
     else:
-        print(f"error {check_item_no} - {item} - code({status_code}): {err_msg}")
+        print(f"Error {check_item_no} - {item} - code({status_code}): {err_msg}")
 
 def verify_create_identifier_status(user, password, base_url, check_item_no):
     print("## Create identifier")
@@ -184,7 +184,7 @@ def verify_create_identifier_status(user, password, base_url, check_item_no):
             print(f"ok {check_item_no}.{i} - {id_created} created")
             created_ids.append(id_created)
         else:
-            print(f"error {check_item_no}.{i} - {text} on {shoulder}")
+            print(f"Error {check_item_no}.{i} - {text} on {shoulder}")
     return created_ids
 
 def verify_update_identifier_status(user, password, base_url, identifiers, check_item_no):
@@ -200,7 +200,7 @@ def verify_update_identifier_status(user, password, base_url, identifiers, check
         if http_success and status_code == 200:
             print(f"ok {check_item_no} - {id} updated with new data: {data}")
         else:
-            print(f"error {check_item_no} - update {id} failed - status_code: {status_code}: {text}: {err_msg}")
+            print(f"Error {check_item_no} - update {id} failed - status_code: {status_code}: {text}: {err_msg}")
     else:
         print(f"info {check_item_no} - no item to udpate")
 
@@ -224,19 +224,20 @@ def check_background_jobs(env, check_item_no):
             if should_be_running:
                 print(f"ok {check_item_no}.{i} - {job} active running")
             else:
-                print(f"error {check_item_no}.{i} - {job} should not be running")
+                print(f"Error {check_item_no}.{i} - {job} should not be running")
         else:
             if should_be_running:
-                print(f"error {check_item_no}.{i} - {job} is not running")
+                print(f"Error {check_item_no}.{i} - {job} is not running")
             else:
-                print(f"info {check_item_no}.{i} - {job} is not running")
+                print(f"Info {check_item_no}.{i} - {job} is not running")
 
-def check_batch_download(user, password, base_url, check_item_no):
+def check_batch_download(user, password, base_url, notify_email, check_item_no):
     print("## Check batch download from S3")
     data = {
         'format': 'csv',
         'type': 'ark',
         'column': '_id',
+        'notify': notify_email,
     }
     url = f"{base_url}/download_request"
 
@@ -264,10 +265,11 @@ def check_batch_download(user, password, base_url, check_item_no):
 
         if success:
             print(f"ok {check_item_no} - batch download file is available at: {s3_file_url}")
+            print(f"Info: Please check account {notify_email} for email with Subject: Your EZID batch download link")
         else:
-            print(f"error {check_item_no} - batch download failed: {s3_file_url} - status_code: {status_code}: {text}: {err_msg}")
+            print(f"Error {check_item_no} - batch download failed: {s3_file_url} - status_code: {status_code}: {text}: {err_msg}")
     else:
-        print(f"error {check_item_no} - batch download failed - status_code: {status_code}: {text}: {err_msg}")
+        print(f"Error {check_item_no} - batch download failed - status_code: {status_code}: {text}: {err_msg}")
 
 def main():
 
@@ -275,20 +277,17 @@ def main():
 
     # add input and output filename arguments to the parser
     parser.add_argument('-e', '--env', type=str, required=True, choices=['test', 'dev', 'stg', 'prd'], help='Environment')
-    parser.add_argument('-u', '--user', type=str, required=False, help='user name')
-    parser.add_argument('-p', '--password', type=str, required=False, help='password')
+    parser.add_argument('-u', '--user', type=str, required=True, help='user name')
+    parser.add_argument('-p', '--password', type=str, required=True, help='password')
     parser.add_argument('-v', '--version', type=str, required=False, help='version')
+    parser.add_argument('-n', '--notify_email', type=str, required=True, help='Email address to receive download notification.')
  
     args = parser.parse_args()
     env = args.env
     user = args.user
     password = args.password
     version = args.version
-
-    if user is None:
-        user = "apitest"
-    if password is None:
-        password = "apitest"
+    notify_email = args.notify_email
   
     base_urls = {
         "test": "http://127.0.0.1:8000",
@@ -308,8 +307,7 @@ def main():
 
     check_background_jobs(env, check_item_no="5")
 
-    check_batch_download(user, password, base_url, check_item_no="6")
- 
+    check_batch_download(user, password, base_url, notify_email, check_item_no="6")
 
 
 if __name__ == "__main__":
