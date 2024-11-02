@@ -158,7 +158,7 @@ def verify_ezid_version(base_url, version, check_item_no):
                 assert text == version
                 print(f"ok {check_item_no} - {item} - {version}")
             else:
-                print(f"info {check_item_no} - EZID version - {text}")
+                print(f"Info {check_item_no} - EZID version - {text}")
         except AssertionError as e:
             print(f"Error {check_item_no} - {item} - AssertionError: returned text \"{text}\" does not match expected text: \"{version}\"")
     else:
@@ -202,7 +202,7 @@ def verify_update_identifier_status(user, password, base_url, identifiers, check
         else:
             print(f"Error {check_item_no} - update {id} failed - status_code: {status_code}: {text}: {err_msg}")
     else:
-        print(f"info {check_item_no} - no item to udpate")
+        print(f"Info {check_item_no} - no item to udpate")
 
 def check_background_jobs(env, check_item_no):
     if env in ['test', 'dev']:
