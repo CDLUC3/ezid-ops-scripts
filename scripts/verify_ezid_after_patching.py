@@ -38,17 +38,25 @@ def get_status(url, allow_redirects=False):
     status_code = -1
     text = ""
     err_msg = ""
+    location = ""
     try:
         r = requests.get(url=url, allow_redirects=allow_redirects)
         status_code = r.status_code
         r.raise_for_status()
         text = r.text
         success = True
+        location = r.headers.get("Location", ""),
     except requests.exceptions.RequestException as e:
         if hasattr(e, 'response') and e.response is not None:
             status_code = e.response.status_code
         err_msg = "HTTPError: " + str(e)[:200]
-    return success, status_code, text, err_msg
+    return {
+        'success': success, 
+        'status_code': status_code,
+        'text': text, 
+        'err_msg': err_msg, 
+        'location': location,
+        }
 
 def post_data(url, user, password, data, content_type=None):
     success = False
@@ -138,40 +146,40 @@ def toAnvl (record):
 
 def verify_ezid_status(base_url, check_item_no):
     item = "Verify EZID status"
-    success, status_code, text, err_msg = get_status(f"{base_url}/status")
-    if success:
+    status = get_status(f"{base_url}/status")
+    if status['success']:
         expected_text = "success: EZID is up"
         try:
-            assert text == expected_text
+            assert status['text'] == expected_text
             print(f"ok {check_item_no} - {item}")
         except AssertionError as e:
-            print(f"Error {check_item_no} - {item} - AssertionError: returned text \"{text}\" does not match expected text: \"{expected_text}\"")
+            print(f"Error {check_item_no} - {item} - AssertionError: returned text \"{status['text']}\" does not match expected text: \"{expected_text}\"")
     else:
-        print(f"Error {check_item_no} - {item} - code({status_code}): {err_msg}")
+        print(f"Error {check_item_no} - {item} - code({status['status_code']}): {status['err_msg']}")
 
 def verify_ezid_version(base_url, version, check_item_no):
     item = "Verify EZID version"
-    success, status_code, text, err_msg = get_status(f"{base_url}/version")
-    if success:
+    status = get_status(f"{base_url}/version")
+    if status['success']:
         try:
             if version:
-                assert text == version
+                assert status['text'] == version
                 print(f"ok {check_item_no} - {item} - {version}")
             else:
-                print(f"Info {check_item_no} - EZID version - {text}")
+                print(f"Info {check_item_no} - EZID version - {status['text']}")
         except AssertionError as e:
-            print(f"Error {check_item_no} - {item} - AssertionError: returned text \"{text}\" does not match expected text: \"{version}\"")
+            print(f"Error {check_item_no} - {item} - AssertionError: returned text \"{status['text']}\" does not match expected text: \"{version}\"")
     else:
-        print(f"Error {check_item_no} - {item} - code({status_code}): {err_msg}")
+        print(f"Error {check_item_no} - {item} - code({status['status_code']}): {status['err_msg']}")
 
 def verify_search_function(base_url, check_item_no):
     item = "Verify search function"
     search_url = "search?filtered=t&identifier=ark%3A%2F13030%2Fm5z94194"
-    success, status_code, text, err_msg = get_status(f"{base_url}/{search_url}")
-    if success and status_code == 200:
+    status = get_status(f"{base_url}/{search_url}")
+    if status['success'] and status['status_code'] == 200:
         print(f"ok {check_item_no} - {item}")
     else:
-        print(f"Error {check_item_no} - {item} - code({status_code}): {err_msg}")
+        print(f"Error {check_item_no} - {item} - code({status['status_code']}): {status['err_msg']}")
 
 def verify_create_identifier_status(user, password, base_url, check_item_no):
     print("## Create identifier")
@@ -255,7 +263,8 @@ def check_batch_download(user, password, base_url, notify_email, check_item_no):
         success = False
         wait_time = 0
         while count < 60: 
-            success, status_code, text, err_msg = get_status(s3_file_url, allow_redirects=True)
+            status = get_status(s3_file_url, allow_redirects=True)
+            success = status['success']
             if success:
                 break
             time.sleep(5)
@@ -270,6 +279,16 @@ def check_batch_download(user, password, base_url, notify_email, check_item_no):
             print(f"Error {check_item_no} - batch download failed: {s3_file_url} - status_code: {status_code}: {text}: {err_msg}")
     else:
         print(f"Error {check_item_no} - batch download failed - status_code: {status_code}: {text}: {err_msg}")
+
+def check_resolver(base_url, check_item_no):
+    item = "Verify Resolver function"
+    id = "ark%3A%2F12345%2Ffk1234"
+    status = get_status(f"{base_url}/{id}")
+    if status['success'] and status['status_code'] == 302 and 'http://www.cdlib.org/services' in status['location']:
+        print(f"ok {check_item_no} - {item}")
+    else:
+        print(f"Error {check_item_no} - {item} - code({status['status_code']}): {status['err_msg']}")
+
 
 def main():
 
@@ -309,6 +328,7 @@ def main():
 
     check_batch_download(user, password, base_url, notify_email, check_item_no="6")
 
+    check_resolver(base_url, check_item_no="7")
 
 if __name__ == "__main__":
     main()
