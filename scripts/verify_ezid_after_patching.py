@@ -283,7 +283,7 @@ def check_batch_download(user, password, base_url, notify_email, check_item_no):
 def check_resolver(base_url, check_item_no):
     item = "Verify Resolver function"
     id = "ark%3A%2F12345%2Ffk1234"
-    status = get_status(f"{base_url}/{id}")
+    status = get_status(f"{base_url}/{id}", allow_redirects=False)
     if status['success'] and status['status_code'] == 302 and 'http://www.cdlib.org/services' in status['location']:
         print(f"ok {check_item_no} - {item}")
     else:
