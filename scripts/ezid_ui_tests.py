@@ -146,7 +146,7 @@ def ui_test_creator_doi(base_url):
     time.sleep(3)
     browser.quit()
 
-def ui_test_contact(base_url):
+def ui_test_contact(base_url, email):
     print("Testing the contact EZID form ...")
     browser = webdriver.Chrome()
     browser.get(base_url)
@@ -173,7 +173,7 @@ def ui_test_contact(base_url):
     your_name = browser.find_element(By.ID, "id_your_name")
     your_name.send_keys("test name")
     your_email = browser.find_element(By.ID, "id_email")
-    your_email.send_keys("ezid.test@cdl.org")
+    your_email.send_keys(email)
     your_name = browser.find_element(By.ID, "id_your_name")
     your_name.send_keys("test name")
     your_inst = browser.find_element(By.ID, "id_affiliation")
@@ -208,17 +208,15 @@ def main():
 
     # add input and output filename arguments to the parser
     parser.add_argument('-e', '--env', type=str, required=True, choices=['test', 'dev', 'stg', 'prd'], help='Environment')
-    parser.add_argument('-u', '--user', type=str, required=False, help='user name')
-    parser.add_argument('-p', '--password', type=str, required=False, help='password')
+    parser.add_argument('-u', '--user', type=str, required=True, help='user name')
+    parser.add_argument('-p', '--password', type=str, required=True, help='password')
+    parser.add_argument('-m', '--user_email', type=str, required=True, help='Email address for testing the Contact Us form.')
  
     args = parser.parse_args()
     env = args.env
     user = args.user
     password = args.password
-
-    if user is None:
-        user = "apitest"
-        password = "apitest"
+    email = args.user_email
   
     base_urls = {
         "test": "http://127.0.0.1:8000",
@@ -231,7 +229,7 @@ def main():
     ui_test_login_logout(base_url, user, password)
     ui_test_creator_ark(base_url)
     ui_test_creator_doi(base_url)
-    ui_test_contact(base_url)
+    ui_test_contact(base_url, email)
 
 if __name__ == '__main__':
     main()
