@@ -1,6 +1,6 @@
 # DOI Verification Tool
 
-Check DOIs against the DataCite API and optionally testing their resolution.
+Check DOIs against the DataCite API and optionally test their resolution.
 
 ## How It Works
 
