@@ -32,11 +32,12 @@ def ui_test_login_logout(chrome_options, base_url, user, password):
     # submit login
     login_button = browser.find_element(By.ID, "login")
     login_button.click()
-    
     time.sleep(1)
+
     wait = WebDriverWait(browser, 10)
     alert_text = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "alert-text")))
     assert "Password required" in alert_text.text
+    print("Password required - PASSED")
     time.sleep(1)
 
     password_input = browser.find_element("xpath", "//input[@type='password' and @class='fcontrol__text-field-inline']")
@@ -52,6 +53,7 @@ def ui_test_login_logout(chrome_options, base_url, user, password):
     wait = WebDriverWait(browser, 10)
     alert_text = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "alert-text")))
     assert "Login failed" in alert_text.text
+    print("Login failed due to wrong password - PASSED")
     time.sleep(2)
 
     password_input = browser.find_element("xpath", "//input[@type='password' and @class='fcontrol__text-field-inline']")
@@ -67,7 +69,8 @@ def ui_test_login_logout(chrome_options, base_url, user, password):
     alert_text = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "alert-text")))
 
     assert "Login successful" in alert_text.text
-    assert "Welcome apitest" in browser.page_source
+    assert f"Welcome {user}" in browser.page_source
+    print("Login successful - PASSED")
     time.sleep(2)
 
     logout_button = browser.find_element("xpath", "//button[@class='header__loginout-link']")
@@ -77,6 +80,7 @@ def ui_test_login_logout(chrome_options, base_url, user, password):
     wait = WebDriverWait(browser, 10)
     alert_text = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "alert-text")))
     assert "You have been logged out" in alert_text.text
+    print("Logout successful - PASSED")
     
     time.sleep(3)
     browser.quit()
@@ -243,18 +247,20 @@ def main():
     }
     base_url = base_urls.get(env)
 
-    chrome_options = None
-    if headless == True:
-        print("Running in headless mode")
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--window-size=1920,1080")
+    options = Options()
 
-#    ui_test_login_logout(chrome_options, base_url, user, password)
-    ui_test_creator_ark(chrome_options, base_url)
-    ui_test_creator_doi(chrome_options, base_url)
-    ui_test_contact(chrome_options, base_url, email)
+    if headless == True:
+        print("Running UI tests in headless mode")
+        options.add_argument("--headless=new")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--window-size=1920,1080")
+
+    ui_test_login_logout(options, base_url, user, password)
+    ui_test_creator_ark(options, base_url)
+    ui_test_creator_doi(options, base_url)
+    ui_test_contact(options, base_url, email)
 
 if __name__ == '__main__':
     main()
