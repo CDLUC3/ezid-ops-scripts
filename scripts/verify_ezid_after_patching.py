@@ -38,6 +38,11 @@ class VerifyAfterPatching:
         "ezid-proc-link-checker-update": False,
     }
 
+    def __init__(self, base_url, user, password):
+        self.base_url = base_url
+        self.user = user
+        self.password = password
+
     @staticmethod
     def get_status(url, allow_redirects=False):
         success = False
@@ -101,13 +106,13 @@ class VerifyAfterPatching:
                 record[key] = value
         return record
 
-    @staticmethod
-    def _create_identifier(base_url, user, password, status='reserved'):
+
+    def _create_identifier(self, status='reserved'):
         shoulder, filename = ("ark:/99999/fk4", "erc_ark_99999_fk4.txt")
         file_path = os.path.join("./test_records/", filename)
         record = VerifyAfterPatching.get_record(file_path)
         data = f"_status: {status}\n".encode("UTF-8") + VerifyAfterPatching.toAnvl(record).encode("UTF-8")
-        url = f"{base_url}/shoulder/{shoulder}"
+        url = f"{self.base_url}/shoulder/{shoulder}"
 
         http_success, status_code, text, err_msg = VerifyAfterPatching.post_data(url, user, password, data)
 
@@ -122,8 +127,7 @@ class VerifyAfterPatching:
 
         return shoulder, id_created, text
 
-    @staticmethod
-    def create_identifers(base_url, user, password):
+    def create_identifers(self):
         shoulder_file_pairs = [
             ("doi:10.15697/", "crossref_doi_10.15697_posted_content.txt"),
             ("doi:10.15697/", "crossref_doi_10.15697_journal.txt"),
@@ -140,7 +144,7 @@ class VerifyAfterPatching:
             file_path = os.path.join("./test_records/", filename)
             record = VerifyAfterPatching.get_record(file_path)
             data = VerifyAfterPatching.toAnvl(record).encode("UTF-8")
-            url = f"{base_url}/shoulder/{shoulder}"
+            url = f"{self.base_url}/shoulder/{shoulder}"
 
             http_success, status_code, text, err_msg = VerifyAfterPatching.post_data(url, user, password, data)
 
@@ -176,10 +180,9 @@ class VerifyAfterPatching:
         # returns: string
         return "".join("%s: %s\n" % (VerifyAfterPatching.escape(k, True), VerifyAfterPatching.escape(record[k])) for k in sorted(record.keys()))
 
-    @staticmethod
-    def verify_ezid_status(base_url, check_item_no):
+    def verify_ezid_status(self):
         print ("## EZID status")
-        status = VerifyAfterPatching.get_status(f"{base_url}/status")
+        status = VerifyAfterPatching.get_status(f"{self.base_url}/status")
         if status['success']:
             expected_text = "success: EZID is up"
             try:
@@ -190,10 +193,9 @@ class VerifyAfterPatching:
         else:
             print(f"  Error {check_item_no} - {item} - code({status['status_code']}): {status['err_msg']}")
 
-    @staticmethod
-    def verify_ezid_version(base_url, version, check_item_no):
+    def verify_ezid_version(self, version):
         print("## EZID version")
-        status = VerifyAfterPatching.get_status(f"{base_url}/version")
+        status = VerifyAfterPatching.get_status(f"{self.base_url}/version")
         if status['success']:
             try:
                 if version:
@@ -206,22 +208,21 @@ class VerifyAfterPatching:
         else:
             print(f"  Error {check_item_no} - {item} - code({status['status_code']}): {status['err_msg']}")
 
-    @staticmethod
-    def verify_search_function(base_url, check_item_no):
+    def verify_search_function(self):
         print("## Search function")
         search_url = "search?filtered=t&identifier=ark%3A%2F13030%2Fm5z94194"
-        status = VerifyAfterPatching.get_status(f"{base_url}/{search_url}")
+        status = VerifyAfterPatching.get_status(f"{self.base_url}/{search_url}")
         if status['success'] and status['status_code'] == 200:
             print(f"  ok - search results")
         else:
             print(f"  Error {check_item_no} - {item} - code({status['status_code']}): {status['err_msg']}")
 
-    @staticmethod
-    def verify_one_time_login(base_url, user, password):
+
+    def verify_one_time_login(self):
         print("## Verify one time login and denied access")
-        login_url = f"{base_url}/login"
-        test_url = f"{base_url}/shoulder/ark:/99999/fk4"  # try minting an identifier, w/ POST
-        unauthorized_url = f"{base_url}/shoulder/ark:/99166/p9"  # try minting unauthorized identifier, w/ POST
+        login_url = f"{self.base_url}/login"
+        test_url = f"{self.base_url}/shoulder/ark:/99999/fk4"  # try minting an identifier, w/ POST
+        unauthorized_url = f"{self.base_url}/shoulder/ark:/99166/p9"  # try minting unauthorized identifier, w/ POST
 
         # Start a session to persist cookies
         session = requests.Session()
@@ -269,10 +270,10 @@ class VerifyAfterPatching:
         else:
             print(f"  error: cleared session should fail - {verify_response.status_code} - {verify_response.text.strip()}")
 
-    @staticmethod
-    def verify_create_identifier_status(user, password, base_url, check_item_no):
+
+    def verify_create_identifier_status(self):
         print("## Mint (create) identifier")
-        results = VerifyAfterPatching.create_identifers(base_url, user, password)
+        results = VerifyAfterPatching.create_identifers(self.base_url, user, password)
         i = 0
         created_ids = []
         for shoulder, id_created, text in results:
@@ -283,8 +284,8 @@ class VerifyAfterPatching:
                 print(f"  Error - {text} on {shoulder}")
         return created_ids
 
-    @staticmethod
-    def verify_update_identifier_status(user, password, base_url, identifiers, check_item_no):
+
+    def verify_update_identifier_status(self, identifiers):
         print("## Update identifier")
         if identifiers:
             for index, id in enumerate(identifiers):
@@ -292,7 +293,7 @@ class VerifyAfterPatching:
                     "_target": "https://cdlib.org/services/"
                 }
                 data = VerifyAfterPatching.toAnvl(data).encode("UTF-8")
-                url = f"{base_url}/id/{id}"
+                url = f"{self.base_url}/id/{id}"
                 http_success, status_code, text, err_msg = VerifyAfterPatching.post_data(url, user, password, data)
                 if http_success and status_code == 200:
                     print(f"  ok - {id} updated with new data: {data}")
@@ -301,14 +302,14 @@ class VerifyAfterPatching:
         else:
             print(f"  Info {check_item_no} - no item to udpate")
 
-    @staticmethod
-    def verify_reserve_and_delete_identifier(user, password, base_url):
+
+    def verify_reserve_and_delete_identifier(self):
         print("## Reserve and delete identifier")
-        shoulder, id_created, text = VerifyAfterPatching._create_identifier(base_url, user, password, status='reserved')
+        shoulder, id_created, text = VerifyAfterPatching._create_identifier(self.base_url, user, password, status='reserved')
         if id_created:
             print(f"  ok - {id_created} reserved")
             # delete the identifier
-            url = f"{base_url}/id/{id_created}"
+            url = f"{self.base_url}/id/{id_created}"
             response = requests.delete(url, auth=(user, password))
             if response.status_code == 200:
                 print(f"  ok - {id_created} deleted")
@@ -317,10 +318,10 @@ class VerifyAfterPatching:
         else:
             print(f"  Error - reserve {shoulder} failed - status_code: {status_code}: {text}: {err_msg}")
 
-    @staticmethod
-    def verify_status_transitions_for_identifier(user, password, base_url):
+
+    def verify_status_transitions_for_identifier(self):
         print("## Verify status transitions for identifier")
-        shoulder, id_created, text = VerifyAfterPatching._create_identifier(base_url, user, password, status='reserved')
+        shoulder, id_created, text = VerifyAfterPatching._create_identifier(self.base_url, user, password, status='reserved')
 
         if not id_created:
             print(f"  Error - reserve {shoulder} failed - status_code: {status_code}: {text}: {err_msg}")
@@ -332,7 +333,7 @@ class VerifyAfterPatching:
         file_path = os.path.join("./test_records/", filename)
         record = VerifyAfterPatching.get_record(file_path)
         data = VerifyAfterPatching.toAnvl(record).encode("UTF-8")
-        url = f"{base_url}/id/{id_created}"
+        url = f"{self.base_url}/id/{id_created}"
 
         # update the identifier to public status
         http_success, status_code, text, err_msg = VerifyAfterPatching.post_data(url, user, password,
@@ -370,8 +371,8 @@ class VerifyAfterPatching:
             print(
                 f"  Error - 'reserved' status shouldn't be allowed once public {id_created} - status_code: {status_code}: {text}: {err_msg}")
 
-    @staticmethod
-    def verify_create_or_update_identifier(user, password, base_url):
+
+    def verify_create_or_update_identifier(self):
         print("## Create or update identifier")
 
         shoulder, filename = ("ark:/99999/fk4", "erc_ark_99999_fk4.txt")
@@ -380,7 +381,7 @@ class VerifyAfterPatching:
         record = VerifyAfterPatching.get_record(file_path)
         data = VerifyAfterPatching.toAnvl(record).encode("UTF-8")
 
-        url = f"{base_url}/id/{my_id}"
+        url = f"{self.base_url}/id/{my_id}"
 
         response = requests.put(url, params={'update_if_exists': 'yes'}, auth=(user, password))
 
@@ -398,10 +399,10 @@ class VerifyAfterPatching:
             print(f"  Error - update {my_id} failed - status_code: {response.status_code}: {response.text.strip()}")
 
 
-    @staticmethod
-    def verify_prefix_matching(user, password, base_url):
+
+    def verify_prefix_matching(self):
         print("## Verify prefix matching")
-        shoulder, id_created, text = VerifyAfterPatching._create_identifier(base_url, user, password, status='public')
+        shoulder, id_created, text = VerifyAfterPatching._create_identifier(self.base_url, user, password, status='public')
         if not id_created:
             print(f"  Error - creating on {shoulder} failed - status_code: {status_code}: {text}: {err_msg}")
             return
@@ -412,22 +413,22 @@ class VerifyAfterPatching:
         else:
             print(f"  Error - prefix match failed with extra string on end of ID - status_code: {response.status_code}: {response.text.strip()}")
 
-    @staticmethod
-    def verify_introspection(user, password, base_url):
+
+    def verify_introspection(self):
         print('## Verify introspection')
-        shoulder, id_created, text = VerifyAfterPatching._create_identifier(base_url, user, password, status='public')
+        shoulder, id_created, text = VerifyAfterPatching._create_identifier(self.base_url, user, password, status='public')
         if not id_created:
             print(f"  Error - creating on {shoulder} failed - status_code: {status_code}: {text}: {err_msg}")
             return
 
-        response = requests.get(f'{base_url}/{id_created}??')
+        response = requests.get(f'{self.base_url}/{id_created}??')
         if response.status_code == 200 and 'what: test record under shoulder - ark:/99999/fk4' in response.text:
             print(f"  ok - ?? for instrospection: {id_created} returned introspection request")
         else:
             print(
                 f"  Error - ?? for instrospection - status_code: {response.status_code}: {response.text.strip()}")
 
-        response = requests.get(f'{base_url}/{id_created}?info')
+        response = requests.get(f'{self.base_url}/{id_created}?info')
         if response.status_code == 200 and 'what: test record under shoulder - ark:/99999/fk4' in response.text:
             print(f"  ok - ?info for instrospection: {id_created} returned introspection request")
         else:
@@ -462,8 +463,8 @@ class VerifyAfterPatching:
                 else:
                     print(f"  Info - {job} is not running")
 
-    @staticmethod
-    def check_batch_download(user, password, base_url, notify_email):
+
+    def check_batch_download(self, notify_email):
         print("## Check batch download from S3")
         data = {
             'format': 'csv',
@@ -471,7 +472,7 @@ class VerifyAfterPatching:
             'column': '_id',
             'notify': notify_email,
         }
-        url = f"{base_url}/download_request"
+        url = f"{self.base_url}/download_request"
 
         # post download requst
         http_success, status_code, text, err_msg = VerifyAfterPatching.post_data(url, user, password, data, content_type="form")
@@ -504,8 +505,8 @@ class VerifyAfterPatching:
         else:
             print(f"  Error - batch download failed - status_code: {status_code}: {text}: {err_msg}")
 
-    @staticmethod
-    def check_resolver(base_url, check_item_no):
+
+    def check_resolver(self):
         item = "Verify Resolver function"
         id = "ark%3A%2F12345%2Ffk1234"
         status = VerifyAfterPatching.get_status(f"{base_url}/{id}", allow_redirects=False)
@@ -517,7 +518,6 @@ class VerifyAfterPatching:
 
 def main():
 
-    VAP = VerifyAfterPatching()
     parser = argparse.ArgumentParser(description='Get EZID records by identifier.')
 
     # add input and output filename arguments to the parser
@@ -542,31 +542,33 @@ def main():
     }
     base_url = base_urls.get(env)
 
-    VAP.verify_ezid_status(base_url, check_item_no="1.1")
-    VAP.verify_ezid_version(base_url, version=version, check_item_no="1.2")
+    vap = VerifyAfterPatching(base_url, user, password)
 
-    VAP.verify_search_function(base_url, check_item_no="2")
+    vap.verify_ezid_status(base_url, check_item_no="1.1")
+    vap.verify_ezid_version(base_url, version=version, check_item_no="1.2")
 
-    VAP.verify_one_time_login(base_url, user, password)
+    vap.verify_search_function(base_url, check_item_no="2")
 
-    created_ids = VAP.verify_create_identifier_status(user, password, base_url, check_item_no="3")
-    VAP.verify_update_identifier_status(user, password, base_url, created_ids, check_item_no="4")
+    vap.verify_one_time_login(base_url, user, password)
 
-    VAP.verify_reserve_and_delete_identifier(user, password, base_url)
+    created_ids = vap.verify_create_identifier_status(user, password, base_url, check_item_no="3")
+    vap.verify_update_identifier_status(user, password, base_url, created_ids, check_item_no="4")
 
-    VAP.verify_status_transitions_for_identifier(user, password, base_url)
+    vap.verify_reserve_and_delete_identifier(user, password, base_url)
 
-    VAP.verify_create_or_update_identifier(user, password, base_url)
+    vap.verify_status_transitions_for_identifier(user, password, base_url)
 
-    VAP.verify_prefix_matching(user, password, base_url)
+    vap.verify_create_or_update_identifier(user, password, base_url)
 
-    VAP.verify_introspection(user, password, base_url)
+    vap.verify_prefix_matching(user, password, base_url)
 
-    VAP.check_background_jobs(env)
+    vap.verify_introspection(user, password, base_url)
 
-    VAP.check_batch_download(user, password, base_url, notify_email)
+    vap.check_background_jobs(env)
 
-    VAP.check_resolver(base_url)
+    vap.check_batch_download(user, password, base_url, notify_email)
+
+    vap.check_resolver(base_url)
 
 if __name__ == "__main__":
     main()
