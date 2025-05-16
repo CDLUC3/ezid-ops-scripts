@@ -68,6 +68,16 @@ class VerifyAfterPatching:
             'location': location,
             }
 
+    def _parse_id_created(self, text):
+        if text.strip().startswith("success"):
+            list_1 = text.split(':', 1)
+            if len(list_1) > 1:
+                ids = list_1[1]
+                list_2 = ids.split("|")
+                if len(list_2) > 0:
+                    return list_2[0].strip()
+        return None
+
 
     def _post_data(self, url, data, content_type=None):
         success = False
@@ -115,14 +125,7 @@ class VerifyAfterPatching:
 
         http_success, status_code, text, err_msg = self._post_data(url, data)
 
-        id_created = None
-        if http_success and text.strip().startswith("success"):
-            list_1 = text.split(':', 1)
-            if len(list_1) > 1:
-                ids = list_1[1]
-                list_2 = ids.split("|")
-                if len(list_2) > 0:
-                    id_created = list_2[0].strip()
+        id_created = self._parse_id_created(text) if http_success else None
 
         return shoulder, id_created, text
 
@@ -147,19 +150,7 @@ class VerifyAfterPatching:
 
             http_success, status_code, text, err_msg = self._post_data(url, data)
 
-            id_created = None
-            if http_success:
-                # should returned text as:
-                # success: doi:10.15697/FK27S78 | ark:/c5697/fk27s78
-                # success: ark:/99999/fk4m631r0h
-                # error: bad request - no such shoulder created
-                if text.strip().startswith("success"):
-                    list_1 = text.split(':', 1)
-                    if len(list_1) > 1:
-                        ids = list_1[1]
-                        list_2 = ids.split("|")
-                        if len(list_2) > 0:
-                            id_created = list_2[0].strip()
+            id_created = self._parse_id_created(text) if http_success else None
 
             status.append((shoulder, id_created, text))
 
@@ -569,4 +560,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
