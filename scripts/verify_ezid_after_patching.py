@@ -69,8 +69,8 @@ class VerifyAfterPatching:
             'location': location,
             }
 
-    @staticmethod
-    def post_data(url, user, password, data, content_type=None):
+
+    def post_data(self, url, data, content_type=None):
         success = False
         status_code = -1
         text = ""
@@ -83,7 +83,7 @@ class VerifyAfterPatching:
 
         headers = {
             "Content-Type": content_type,
-            "Authorization": "Basic " + base64.b64encode(f"{user}:{password}".encode('utf-8')).decode('utf-8'),
+            "Authorization": "Basic " + base64.b64encode(f"{self.user}:{self.password}".encode('utf-8')).decode('utf-8'),
         }
         try:
             r = requests.post(url=url, headers=headers, data=data)
@@ -114,7 +114,7 @@ class VerifyAfterPatching:
         data = f"_status: {status}\n".encode("UTF-8") + VerifyAfterPatching.toAnvl(record).encode("UTF-8")
         url = f"{self.base_url}/shoulder/{shoulder}"
 
-        http_success, status_code, text, err_msg = VerifyAfterPatching.post_data(url, user, password, data)
+        http_success, status_code, text, err_msg = self.post_data(url, data)
 
         id_created = None
         if http_success and text.strip().startswith("success"):
@@ -146,7 +146,7 @@ class VerifyAfterPatching:
             data = VerifyAfterPatching.toAnvl(record).encode("UTF-8")
             url = f"{self.base_url}/shoulder/{shoulder}"
 
-            http_success, status_code, text, err_msg = VerifyAfterPatching.post_data(url, user, password, data)
+            http_success, status_code, text, err_msg = self.post_data(url, data)
 
             id_created = None
             if http_success:
@@ -189,9 +189,9 @@ class VerifyAfterPatching:
                 assert status['text'] == expected_text
                 print(f"  ok - returned status {status['text']}")
             except AssertionError as e:
-                print(f"  Error {check_item_no} - {item} - AssertionError: returned text \"{status['text']}\" does not match expected text: \"{expected_text}\"")
+                print(f"  Error - {item} - AssertionError: returned text \"{status['text']}\" does not match expected text: \"{expected_text}\"")
         else:
-            print(f"  Error {check_item_no} - {item} - code({status['status_code']}): {status['err_msg']}")
+            print(f"  Error - {item} - code({status['status_code']}): {status['err_msg']}")
 
     def verify_ezid_version(self, version):
         print("## EZID version")
@@ -202,11 +202,11 @@ class VerifyAfterPatching:
                     assert status['text'] == version
                     print(f"  ok - version:{item} - {version}")
                 else:
-                    print(f"  Info {check_item_no} - EZID version - {status['text']}")
+                    print(f"  Info - EZID version - {status['text']}")
             except AssertionError as e:
-                print(f"  Error {check_item_no} - {item} - AssertionError: returned text \"{status['text']}\" does not match expected text: \"{version}\"")
+                print(f"  Error - {item} - AssertionError: returned text \"{status['text']}\" does not match expected text: \"{version}\"")
         else:
-            print(f"  Error {check_item_no} - {item} - code({status['status_code']}): {status['err_msg']}")
+            print(f"  Error - {item} - code({status['status_code']}): {status['err_msg']}")
 
     def verify_search_function(self):
         print("## Search function")
@@ -215,7 +215,7 @@ class VerifyAfterPatching:
         if status['success'] and status['status_code'] == 200:
             print(f"  ok - search results")
         else:
-            print(f"  Error {check_item_no} - {item} - code({status['status_code']}): {status['err_msg']}")
+            print(f"  Error - {item} - code({status['status_code']}): {status['err_msg']}")
 
 
     def verify_one_time_login(self):
@@ -228,7 +228,7 @@ class VerifyAfterPatching:
         session = requests.Session()
 
         # Perform login using HTTP Basic Auth
-        response = session.get(login_url, auth=HTTPBasicAuth(user, password))
+        response = session.get(login_url, auth=HTTPBasicAuth(self.user, self.password))
 
         if response.status_code != 200:
             print(f"  Error: Login failed -- {response.status_code} - {response.text.strip()}")
@@ -273,7 +273,7 @@ class VerifyAfterPatching:
 
     def verify_create_identifier_status(self):
         print("## Mint (create) identifier")
-        results = VerifyAfterPatching.create_identifers(self.base_url, user, password)
+        results = self.create_identifers()
         i = 0
         created_ids = []
         for shoulder, id_created, text in results:
@@ -294,23 +294,23 @@ class VerifyAfterPatching:
                 }
                 data = VerifyAfterPatching.toAnvl(data).encode("UTF-8")
                 url = f"{self.base_url}/id/{id}"
-                http_success, status_code, text, err_msg = VerifyAfterPatching.post_data(url, user, password, data)
+                http_success, status_code, text, err_msg = self.post_data(url, data)
                 if http_success and status_code == 200:
                     print(f"  ok - {id} updated with new data: {data}")
                 else:
                     print(f"  Error - update {id} failed - status_code: {status_code}: {text}: {err_msg}")
         else:
-            print(f"  Info {check_item_no} - no item to udpate")
+            print(f"  Info - no item to update")
 
 
     def verify_reserve_and_delete_identifier(self):
         print("## Reserve and delete identifier")
-        shoulder, id_created, text = VerifyAfterPatching._create_identifier(self.base_url, user, password, status='reserved')
+        shoulder, id_created, text = self._create_identifier(status='reserved')
         if id_created:
             print(f"  ok - {id_created} reserved")
             # delete the identifier
             url = f"{self.base_url}/id/{id_created}"
-            response = requests.delete(url, auth=(user, password))
+            response = requests.delete(url, auth=(self.user, self.password))
             if response.status_code == 200:
                 print(f"  ok - {id_created} deleted")
             else:
@@ -321,7 +321,7 @@ class VerifyAfterPatching:
 
     def verify_status_transitions_for_identifier(self):
         print("## Verify status transitions for identifier")
-        shoulder, id_created, text = VerifyAfterPatching._create_identifier(self.base_url, user, password, status='reserved')
+        shoulder, id_created, text = self._create_identifier(status='reserved')
 
         if not id_created:
             print(f"  Error - reserve {shoulder} failed - status_code: {status_code}: {text}: {err_msg}")
@@ -336,7 +336,7 @@ class VerifyAfterPatching:
         url = f"{self.base_url}/id/{id_created}"
 
         # update the identifier to public status
-        http_success, status_code, text, err_msg = VerifyAfterPatching.post_data(url, user, password,
+        http_success, status_code, text, err_msg = self.post_data(url,
                                                              f"_status: public\n".encode("UTF-8") + data)
 
         if http_success and status_code == 200:
@@ -345,7 +345,7 @@ class VerifyAfterPatching:
             print(f"  Error - 'public' status change {id_created} failed - status_code: {status_code}: {text}: {err_msg}")
 
         # update the identifier to unavailable status
-        http_success, status_code, text, err_msg = VerifyAfterPatching.post_data(url, user, password,
+        http_success, status_code, text, err_msg = self.post_data(url,
                                                              f"_status: unavailable | my cat has fleas\n".encode("UTF-8") + data)
         if http_success and status_code == 200:
             print(f"  ok - {id_created} made unavailable")
@@ -353,7 +353,7 @@ class VerifyAfterPatching:
             print(f"  Error - 'unavailable' status change {id_created} failed - status_code: {status_code}: {text}: {err_msg}")
 
         # make unavailable to public again
-        http_success, status_code, text, err_msg = VerifyAfterPatching.post_data(url, user, password,
+        http_success, status_code, text, err_msg = self.post_data(url,
                                                              f"_status: public\n".encode("UTF-8") + data)
 
         if http_success and status_code == 200:
@@ -362,7 +362,7 @@ class VerifyAfterPatching:
             print("  Error - 'public' status change after unavailable {id_created} failed - status_code: {status_code}: {text}: {err_msg}")
 
         # update the identifier to reserved status and it should fail
-        http_success, status_code, text, err_msg = VerifyAfterPatching.post_data(url, user, password,
+        http_success, status_code, text, err_msg = self.post_data(url,
                                                              f"_status: reserved\n".encode("UTF-8") + data)
 
         if http_success and status_code == 400:
@@ -383,7 +383,7 @@ class VerifyAfterPatching:
 
         url = f"{self.base_url}/id/{my_id}"
 
-        response = requests.put(url, params={'update_if_exists': 'yes'}, auth=(user, password))
+        response = requests.put(url, params={'update_if_exists': 'yes'}, auth=(self.user, self.password))
 
         if response.status_code in  (200,201):
             print(f"  ok - {my_id} created")
@@ -392,7 +392,7 @@ class VerifyAfterPatching:
             return
 
         # now update the same identifier with the same call again, and it should exist now
-        response = requests.put(url, params={'update_if_exists': 'yes'}, auth=(user, password))
+        response = requests.put(url, params={'update_if_exists': 'yes'}, auth=(self.user, self.password))
         if response.status_code in (200,201):
             print(f"  ok - {my_id} updated")
         else:
@@ -402,12 +402,12 @@ class VerifyAfterPatching:
 
     def verify_prefix_matching(self):
         print("## Verify prefix matching")
-        shoulder, id_created, text = VerifyAfterPatching._create_identifier(self.base_url, user, password, status='public')
+        shoulder, id_created, text = self._create_identifier(status='public')
         if not id_created:
             print(f"  Error - creating on {shoulder} failed - status_code: {status_code}: {text}: {err_msg}")
             return
 
-        response = requests.get(f'{base_url}/{id_created}/andmore?prefix_match=yes')
+        response = requests.get(f'{self.base_url}/{id_created}/andmore?prefix_match=yes')
         if response.status_code == 200:
             print(f"  ok - {id_created} prefix match worked with extra string on end of ID being ignored")
         else:
@@ -416,7 +416,7 @@ class VerifyAfterPatching:
 
     def verify_introspection(self):
         print('## Verify introspection')
-        shoulder, id_created, text = VerifyAfterPatching._create_identifier(self.base_url, user, password, status='public')
+        shoulder, id_created, text = self._create_identifier(status='public')
         if not id_created:
             print(f"  Error - creating on {shoulder} failed - status_code: {status_code}: {text}: {err_msg}")
             return
@@ -475,7 +475,7 @@ class VerifyAfterPatching:
         url = f"{self.base_url}/download_request"
 
         # post download requst
-        http_success, status_code, text, err_msg = VerifyAfterPatching.post_data(url, user, password, data, content_type="form")
+        http_success, status_code, text, err_msg = self.post_data(url, data, content_type="form")
         if http_success and status_code == 200:
             # download request was successfully processed with "success" and downloadable url in the response body
             # success: https://ezid-stg.cdlib.org/s3_download/xTqyrjZDJz9zYRMz.csv.gz
@@ -544,31 +544,31 @@ def main():
 
     vap = VerifyAfterPatching(base_url, user, password)
 
-    vap.verify_ezid_status(base_url, check_item_no="1.1")
-    vap.verify_ezid_version(base_url, version=version, check_item_no="1.2")
+    vap.verify_ezid_status()
+    vap.verify_ezid_version(version)
 
-    vap.verify_search_function(base_url, check_item_no="2")
+    vap.verify_search_function()
 
-    vap.verify_one_time_login(base_url, user, password)
+    vap.verify_one_time_login()
 
-    created_ids = vap.verify_create_identifier_status(user, password, base_url, check_item_no="3")
-    vap.verify_update_identifier_status(user, password, base_url, created_ids, check_item_no="4")
+    created_ids = vap.verify_create_identifier_status()
+    vap.verify_update_identifier_status(created_ids)
 
-    vap.verify_reserve_and_delete_identifier(user, password, base_url)
+    vap.verify_reserve_and_delete_identifier()
 
-    vap.verify_status_transitions_for_identifier(user, password, base_url)
+    vap.verify_status_transitions_for_identifier()
 
-    vap.verify_create_or_update_identifier(user, password, base_url)
+    vap.verify_create_or_update_identifier()
 
-    vap.verify_prefix_matching(user, password, base_url)
+    vap.verify_prefix_matching()
 
-    vap.verify_introspection(user, password, base_url)
+    vap.verify_introspection()
 
     vap.check_background_jobs(env)
 
-    vap.check_batch_download(user, password, base_url, notify_email)
+    vap.check_batch_download(notify_email)
 
-    vap.check_resolver(base_url)
+    vap.check_resolver()
 
 if __name__ == "__main__":
     main()
