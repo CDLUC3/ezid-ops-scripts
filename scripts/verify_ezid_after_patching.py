@@ -431,9 +431,9 @@ class VerifyAfterPatching:
             return
 
         if env == "prd":
-            background_jobs = BACKGROUND_JOBS_PRD
+            background_jobs = VerifyAfterPatching.BACKGROUND_JOBS_PRD
         else:
-            background_jobs = BACKGROUND_JOBS_STG
+            background_jobs = VerifyAfterPatching.BACKGROUND_JOBS_STG
 
         i = 0
         for job, should_be_running in background_jobs.items():
