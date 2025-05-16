@@ -43,8 +43,7 @@ class VerifyAfterPatching:
         self.user = user
         self.password = password
 
-    @staticmethod
-    def get_status(url, allow_redirects=False):
+    def _get_status(self, url, allow_redirects=False):
         success = False
         status_code = -1
         text = ""
@@ -70,7 +69,7 @@ class VerifyAfterPatching:
             }
 
 
-    def post_data(self, url, data, content_type=None):
+    def _post_data(self, url, data, content_type=None):
         success = False
         status_code = -1
         text = ""
@@ -96,8 +95,8 @@ class VerifyAfterPatching:
             err_msg = "HTTPError: " + str(e)[:200]
         return success, status_code, text, err_msg
 
-    @staticmethod
-    def get_record(filename):
+
+    def _get_record(self, filename):
         record = {}
         with open(filename, 'r', encoding="utf-8") as file:
             lines = file.readlines()
@@ -110,11 +109,11 @@ class VerifyAfterPatching:
     def _create_identifier(self, status='reserved'):
         shoulder, filename = ("ark:/99999/fk4", "erc_ark_99999_fk4.txt")
         file_path = os.path.join("./test_records/", filename)
-        record = VerifyAfterPatching.get_record(file_path)
-        data = f"_status: {status}\n".encode("UTF-8") + VerifyAfterPatching.toAnvl(record).encode("UTF-8")
+        record = self._get_record(file_path)
+        data = f"_status: {status}\n".encode("UTF-8") + self._toAnvl(record).encode("UTF-8")
         url = f"{self.base_url}/shoulder/{shoulder}"
 
-        http_success, status_code, text, err_msg = self.post_data(url, data)
+        http_success, status_code, text, err_msg = self._post_data(url, data)
 
         id_created = None
         if http_success and text.strip().startswith("success"):
@@ -127,7 +126,7 @@ class VerifyAfterPatching:
 
         return shoulder, id_created, text
 
-    def create_identifers(self):
+    def _create_identifiers(self):
         shoulder_file_pairs = [
             ("doi:10.15697/", "crossref_doi_10.15697_posted_content.txt"),
             ("doi:10.15697/", "crossref_doi_10.15697_journal.txt"),
@@ -142,11 +141,11 @@ class VerifyAfterPatching:
         status = []
         for (shoulder, filename) in shoulder_file_pairs:
             file_path = os.path.join("./test_records/", filename)
-            record = VerifyAfterPatching.get_record(file_path)
-            data = VerifyAfterPatching.toAnvl(record).encode("UTF-8")
+            record = self._get_record(file_path)
+            data = self._toAnvl(record).encode("UTF-8")
             url = f"{self.base_url}/shoulder/{shoulder}"
 
-            http_success, status_code, text, err_msg = self.post_data(url, data)
+            http_success, status_code, text, err_msg = self._post_data(url, data)
 
             id_created = None
             if http_success:
@@ -166,23 +165,21 @@ class VerifyAfterPatching:
 
         return status
 
-    @staticmethod
-    def escape(s, colonToo=False):
+    def _escape(self, s, colonToo=False):
         if colonToo:
             p = "[%:\r\n]"
         else:
             p = "[%\r\n]"
         return re.sub(p, lambda c: "%%%02X" % ord(c.group(0)), str(s))
 
-    @staticmethod
-    def toAnvl(record):
+    def _toAnvl(self, record):
         # record: metadata dictionary
         # returns: string
-        return "".join("%s: %s\n" % (VerifyAfterPatching.escape(k, True), VerifyAfterPatching.escape(record[k])) for k in sorted(record.keys()))
+        return "".join("%s: %s\n" % (self._escape(k, True), self._escape(record[k])) for k in sorted(record.keys()))
 
     def verify_ezid_status(self):
         print ("## EZID status")
-        status = VerifyAfterPatching.get_status(f"{self.base_url}/status")
+        status = self._get_status(f"{self.base_url}/status")
         if status['success']:
             expected_text = "success: EZID is up"
             try:
@@ -195,7 +192,7 @@ class VerifyAfterPatching:
 
     def verify_ezid_version(self, version):
         print("## EZID version")
-        status = VerifyAfterPatching.get_status(f"{self.base_url}/version")
+        status = self._get_status(f"{self.base_url}/version")
         if status['success']:
             try:
                 if version:
@@ -211,7 +208,7 @@ class VerifyAfterPatching:
     def verify_search_function(self):
         print("## Search function")
         search_url = "search?filtered=t&identifier=ark%3A%2F13030%2Fm5z94194"
-        status = VerifyAfterPatching.get_status(f"{self.base_url}/{search_url}")
+        status = self._get_status(f"{self.base_url}/{search_url}")
         if status['success'] and status['status_code'] == 200:
             print(f"  ok - search results")
         else:
@@ -273,7 +270,7 @@ class VerifyAfterPatching:
 
     def verify_create_identifier_status(self):
         print("## Mint (create) identifier")
-        results = self.create_identifers()
+        results = self._create_identifiers()
         i = 0
         created_ids = []
         for shoulder, id_created, text in results:
@@ -292,9 +289,9 @@ class VerifyAfterPatching:
                 data = {
                     "_target": "https://cdlib.org/services/"
                 }
-                data = VerifyAfterPatching.toAnvl(data).encode("UTF-8")
+                data = self._toAnvl(data).encode("UTF-8")
                 url = f"{self.base_url}/id/{id}"
-                http_success, status_code, text, err_msg = self.post_data(url, data)
+                http_success, status_code, text, err_msg = self._post_data(url, data)
                 if http_success and status_code == 200:
                     print(f"  ok - {id} updated with new data: {data}")
                 else:
@@ -331,12 +328,12 @@ class VerifyAfterPatching:
 
         shoulder, filename = ("ark:/99999/fk4", "erc_ark_99999_fk4.txt")
         file_path = os.path.join("./test_records/", filename)
-        record = VerifyAfterPatching.get_record(file_path)
-        data = VerifyAfterPatching.toAnvl(record).encode("UTF-8")
+        record = self._get_record(file_path)
+        data = self._toAnvl(record).encode("UTF-8")
         url = f"{self.base_url}/id/{id_created}"
 
         # update the identifier to public status
-        http_success, status_code, text, err_msg = self.post_data(url,
+        http_success, status_code, text, err_msg = self._post_data(url,
                                                              f"_status: public\n".encode("UTF-8") + data)
 
         if http_success and status_code == 200:
@@ -345,7 +342,7 @@ class VerifyAfterPatching:
             print(f"  Error - 'public' status change {id_created} failed - status_code: {status_code}: {text}: {err_msg}")
 
         # update the identifier to unavailable status
-        http_success, status_code, text, err_msg = self.post_data(url,
+        http_success, status_code, text, err_msg = self._post_data(url,
                                                              f"_status: unavailable | my cat has fleas\n".encode("UTF-8") + data)
         if http_success and status_code == 200:
             print(f"  ok - {id_created} made unavailable")
@@ -353,7 +350,7 @@ class VerifyAfterPatching:
             print(f"  Error - 'unavailable' status change {id_created} failed - status_code: {status_code}: {text}: {err_msg}")
 
         # make unavailable to public again
-        http_success, status_code, text, err_msg = self.post_data(url,
+        http_success, status_code, text, err_msg = self._post_data(url,
                                                              f"_status: public\n".encode("UTF-8") + data)
 
         if http_success and status_code == 200:
@@ -362,7 +359,7 @@ class VerifyAfterPatching:
             print("  Error - 'public' status change after unavailable {id_created} failed - status_code: {status_code}: {text}: {err_msg}")
 
         # update the identifier to reserved status and it should fail
-        http_success, status_code, text, err_msg = self.post_data(url,
+        http_success, status_code, text, err_msg = self._post_data(url,
                                                              f"_status: reserved\n".encode("UTF-8") + data)
 
         if http_success and status_code == 400:
@@ -378,8 +375,8 @@ class VerifyAfterPatching:
         shoulder, filename = ("ark:/99999/fk4", "erc_ark_99999_fk4.txt")
         my_id = f'{shoulder}-{shortuuid.uuid()}'
         file_path = os.path.join("./test_records/", filename)
-        record = VerifyAfterPatching.get_record(file_path)
-        data = VerifyAfterPatching.toAnvl(record).encode("UTF-8")
+        record = self._get_record(file_path)
+        data = self._toAnvl(record).encode("UTF-8")
 
         url = f"{self.base_url}/id/{my_id}"
 
@@ -475,7 +472,7 @@ class VerifyAfterPatching:
         url = f"{self.base_url}/download_request"
 
         # post download requst
-        http_success, status_code, text, err_msg = self.post_data(url, data, content_type="form")
+        http_success, status_code, text, err_msg = self._post_data(url, data, content_type="form")
         if http_success and status_code == 200:
             # download request was successfully processed with "success" and downloadable url in the response body
             # success: https://ezid-stg.cdlib.org/s3_download/xTqyrjZDJz9zYRMz.csv.gz
@@ -488,7 +485,7 @@ class VerifyAfterPatching:
             success = False
             wait_time = 0
             while count < 60:
-                status = VerifyAfterPatching.get_status(s3_file_url, allow_redirects=True)
+                status = self._get_status(s3_file_url, allow_redirects=True)
                 success = status['success']
                 if success:
                     break
@@ -509,7 +506,7 @@ class VerifyAfterPatching:
     def check_resolver(self):
         item = "Verify Resolver function"
         id = "ark%3A%2F12345%2Ffk1234"
-        status = VerifyAfterPatching.get_status(f"{base_url}/{id}", allow_redirects=False)
+        status = self._get_status(f"{base_url}/{id}", allow_redirects=False)
         if status['success'] and status['status_code'] == 302 and 'http://www.cdlib.org/services' in status['location']:
             print(f"  ok - {item}")
         else:
