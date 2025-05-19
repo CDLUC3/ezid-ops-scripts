@@ -3,6 +3,7 @@ import time
 import argparse
 
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -10,9 +11,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
 
 
-def ui_test_login_logout(base_url, user, password):
-    print("Testing login/logout ...")
-    browser = webdriver.Chrome()
+def ui_test_login_logout(chrome_options, base_url, user, password):
+    print("Testing login/logout ... ")
+    browser = webdriver.Chrome(options=chrome_options)
     browser.get(base_url)
 
     # Find and click the login button
@@ -26,29 +27,33 @@ def ui_test_login_logout(base_url, user, password):
     # Enter username and password
     username_input.send_keys(user)
     password_input.send_keys("")
-    time.sleep(2)
+    time.sleep(1)
     
     # submit login
     login_button = browser.find_element(By.ID, "login")
     login_button.click()
-    
+    time.sleep(1)
+
     wait = WebDriverWait(browser, 10)
     alert_text = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "alert-text")))
     assert "Password required" in alert_text.text
-    time.sleep(2)
+    print("Password required - PASSED")
+    time.sleep(1)
 
     password_input = browser.find_element("xpath", "//input[@type='password' and @class='fcontrol__text-field-inline']")
     password_input.clear()
     password_input.send_keys("xxxx")
-    time.sleep(2)
+    time.sleep(1)
     
     # submit login
     login_button = browser.find_element("xpath", "//button[@class='button__primary general__form-submit']")
     login_button.click()
     
+    time.sleep(1)
     wait = WebDriverWait(browser, 10)
     alert_text = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "alert-text")))
     assert "Login failed" in alert_text.text
+    print("Login failed due to wrong password - PASSED")
     time.sleep(2)
 
     password_input = browser.find_element("xpath", "//input[@type='password' and @class='fcontrol__text-field-inline']")
@@ -59,26 +64,31 @@ def ui_test_login_logout(base_url, user, password):
     login_button = browser.find_element("xpath", "//button[@class='button__primary general__form-submit']")
     login_button.click()
 
+    time.sleep(1)
     wait = WebDriverWait(browser, 10)
     alert_text = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "alert-text")))
 
     assert "Login successful" in alert_text.text
-    assert "Welcome apitest" in browser.page_source
+    assert f"Welcome {user}" in browser.page_source
+    print("Login successful - PASSED")
     time.sleep(2)
 
     logout_button = browser.find_element("xpath", "//button[@class='header__loginout-link']")
     logout_button.click()
 
+    time.sleep(1)
     wait = WebDriverWait(browser, 10)
     alert_text = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "alert-text")))
     assert "You have been logged out" in alert_text.text
+    print("Logout successful - PASSED")
     
     time.sleep(3)
     browser.quit()
+    print("Testing login/logout ... PASSED")
 
-def ui_test_creator_ark(base_url):
+def ui_test_creator_ark(chrome_options, base_url):
     print("Testing create ARK ...")
-    browser = webdriver.Chrome()
+    browser = webdriver.Chrome(options=chrome_options)
     browser.get(base_url)
 
     target_input = browser.find_element(By.ID, "target")
@@ -95,6 +105,7 @@ def ui_test_creator_ark(base_url):
     create_button = browser.find_element(By.XPATH, "//button[@class='home__button-primary']")
     create_button.click()
 
+    time.sleep(1)
     wait = WebDriverWait(browser, 10)
     alert_text = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "alert-text")))
     
@@ -102,12 +113,13 @@ def ui_test_creator_ark(base_url):
     assert "Identifier Details" in browser.page_source
     assert "ark:/99999/fk4" in browser.page_source
 
-    time.sleep(3)
+    time.sleep(2)
     browser.quit()
+    print("Testing create ARK ... PASSED")
 
-def ui_test_creator_doi(base_url):
+def ui_test_creator_doi(chrome_options, base_url):
     print("Testing create DOI ...")
-    browser = webdriver.Chrome()
+    browser = webdriver.Chrome(options=chrome_options)
     browser.get(base_url)
 
     radio_button = browser.find_element(By.XPATH, "//input[@type='radio' and @id='doi:10.5072/FK2']")
@@ -136,6 +148,7 @@ def ui_test_creator_doi(base_url):
     create_button = browser.find_element(By.XPATH, "//button[@class='home__button-primary']")
     create_button.click()
 
+    time.sleep(1)
     wait = WebDriverWait(browser, 10)
     alert_text = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "alert-text")))
     
@@ -143,18 +156,21 @@ def ui_test_creator_doi(base_url):
     assert "Identifier Details" in browser.page_source
     assert "doi:10.5072/FK2" in browser.page_source
 
-    time.sleep(3)
+    time.sleep(2)
     browser.quit()
+    print("Testing create DOI ... PASSED")
 
-def ui_test_contact(base_url, email):
+def ui_test_contact(chrome_options, base_url, email):
     print("Testing the contact EZID form ...")
-    browser = webdriver.Chrome()
+    browser = webdriver.Chrome(options=chrome_options)
     browser.get(base_url)
 
     time.sleep(1)
 
     contact_link = browser.find_element(By.XPATH, "//a[@class='header__nav-item-contact' and contains(text(), 'Contact') ]")
     contact_link.click()
+
+    time.sleep(1)
 
     assert "contact" in browser.current_url
     assert "Fill out this form and EZID will get in touch with you" in browser.page_source
@@ -195,13 +211,16 @@ def ui_test_contact(base_url, email):
     time.sleep(1)
     submit_button.click()
 
+    time.sleep(2)
+
     if base_url == "http://127.0.0.1:8000":
         assert "There was a problem sending your email" in browser.page_source
     else:
         assert "Thank you for your message. We will respond as soon as possible." in browser.page_source
 
-    time.sleep(3)
+    time.sleep(2)
     browser.quit()
+    print("Testing the contact EZID form ... PASSED")
 
 def main():
     parser = argparse.ArgumentParser(description='Get EZID records by identifier.')
@@ -211,12 +230,14 @@ def main():
     parser.add_argument('-u', '--user', type=str, required=True, help='user name')
     parser.add_argument('-p', '--password', type=str, required=True, help='password')
     parser.add_argument('-m', '--user_email', type=str, required=True, help='Email address for testing the Contact Us form.')
+    parser.add_argument('-l', '--headless', action='store_true', required=False, help='Enable headless mode.')
  
     args = parser.parse_args()
     env = args.env
     user = args.user
     password = args.password
     email = args.user_email
+    headless = args.headless
   
     base_urls = {
         "test": "http://127.0.0.1:8000",
@@ -226,10 +247,20 @@ def main():
     }
     base_url = base_urls.get(env)
 
-    ui_test_login_logout(base_url, user, password)
-    ui_test_creator_ark(base_url)
-    ui_test_creator_doi(base_url)
-    ui_test_contact(base_url, email)
+    options = Options()
+
+    if headless == True:
+        print("Running UI tests in headless mode")
+        options.add_argument("--headless=new")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--window-size=1920,1080")
+
+    ui_test_login_logout(options, base_url, user, password)
+    ui_test_creator_ark(options, base_url)
+    ui_test_creator_doi(options, base_url)
+    ui_test_contact(options, base_url, email)
 
 if __name__ == '__main__':
     main()
