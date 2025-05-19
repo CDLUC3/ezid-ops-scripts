@@ -476,31 +476,31 @@ def main():
     }
     base_url = base_urls.get(env)
 
-    vap = VerifyEzidStatus(base_url, user, password)
+    ves = VerifyEzidStatus(base_url, user, password)
 
-    vap.verify_ezid_status()
-    vap.verify_ezid_version(version)
+    ves.verify_ezid_status()
+    ves.verify_ezid_version(version)
 
-    vap.verify_search_function()
+    ves.verify_search_function()
 
-    vap.verify_one_time_login()
+    ves.verify_one_time_login()
 
-    created_ids = vap.verify_create_identifier_status()
-    vap.verify_update_identifier_status(created_ids)
+    created_ids = ves.verify_create_identifier_status()
+    ves.verify_update_identifier_status(created_ids)
 
-    vap.verify_reserve_and_delete_identifier()
+    ves.verify_reserve_and_delete_identifier()
 
-    vap.verify_status_transitions_for_identifier()
+    ves.verify_status_transitions_for_identifier()
 
-    vap.verify_create_or_update_identifier()
+    ves.verify_create_or_update_identifier()
 
-    vap.verify_prefix_matching()
+    ves.verify_prefix_matching()
 
-    vap.verify_introspection()
+    ves.verify_introspection()
 
-    vap.check_batch_download(notify_email)
+    ves.check_batch_download(notify_email)
 
-    vap.check_resolver()
+    ves.check_resolver()
 
 if __name__ == "__main__":
     main()
