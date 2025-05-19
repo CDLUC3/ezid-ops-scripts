@@ -11,33 +11,7 @@ from requests.auth import HTTPBasicAuth
 import shortuuid
 
 
-class VerifyAfterPatching:
-    BACKGROUND_JOBS_PRD = {
-        "ezid-proc-cleanup-async-queues": True,
-        "ezid-proc-crossref": True,
-        "ezid-proc-datacite": True,
-        "ezid-proc-download": True,
-        "ezid-proc-expunge": True,
-        "ezid-proc-newsfeed": True,
-        "ezid-proc-search-indexer": True,
-        "ezid-proc-stats": True,
-        "ezid-proc-link-checker": True,
-        "ezid-proc-link-checker-update": True,
-    }
-
-    BACKGROUND_JOBS_STG = {
-        "ezid-proc-cleanup-async-queues": True,
-        "ezid-proc-crossref": True,
-        "ezid-proc-datacite": True,
-        "ezid-proc-download": True,
-        "ezid-proc-expunge": True,
-        "ezid-proc-newsfeed": True,
-        "ezid-proc-search-indexer": True,
-        "ezid-proc-stats": True,
-        "ezid-proc-link-checker": False,
-        "ezid-proc-link-checker-update": False,
-    }
-
+class VerifyEzidStatus:
     def __init__(self, base_url, user, password):
         self.base_url = base_url
         self.user = user
@@ -177,9 +151,9 @@ class VerifyAfterPatching:
                 assert status['text'] == expected_text
                 print(f"  ok - returned status {status['text']}")
             except AssertionError as e:
-                print(f"  Error - {item} - AssertionError: returned text \"{status['text']}\" does not match expected text: \"{expected_text}\"")
+                print(f"  Error - AssertionError: returned text \"{status['text']}\" does not match expected text: \"{expected_text}\"")
         else:
-            print(f"  Error - {item} - code({status['status_code']}): {status['err_msg']}")
+            print(f"  Error - code({status['status_code']}): {status['err_msg']}")
 
     def verify_ezid_version(self, version):
         print("## EZID version")
@@ -188,13 +162,13 @@ class VerifyAfterPatching:
             try:
                 if version:
                     assert status['text'] == version
-                    print(f"  ok - version:{item} - {version}")
+                    print(f"  ok - version: {version}")
                 else:
                     print(f"  Info - EZID version - {status['text']}")
             except AssertionError as e:
-                print(f"  Error - {item} - AssertionError: returned text \"{status['text']}\" does not match expected text: \"{version}\"")
+                print(f"  Error - AssertionError: returned text \"{status['text']}\" does not match expected text: \"{version}\"")
         else:
-            print(f"  Error - {item} - code({status['status_code']}): {status['err_msg']}")
+            print(f"  Error - code({status['status_code']}): {status['err_msg']}")
 
     def verify_search_function(self):
         print("## Search function")
@@ -203,7 +177,7 @@ class VerifyAfterPatching:
         if status['success'] and status['status_code'] == 200:
             print(f"  ok - search results")
         else:
-            print(f"  Error - {item} - code({status['status_code']}): {status['err_msg']}")
+            print(f"  Error - code({status['status_code']}): {status['err_msg']}")
 
 
     def verify_one_time_login(self):
@@ -361,7 +335,7 @@ class VerifyAfterPatching:
 
 
     def verify_create_or_update_identifier(self):
-        print("## Create or update identifier")
+        print("## Create or update identifier with ?update_if_exists=yes")
 
         shoulder, filename = ("ark:/99999/fk4", "erc_ark_99999_fk4.txt")
         my_id = f'{shoulder}-{shortuuid.uuid()}'
@@ -423,34 +397,6 @@ class VerifyAfterPatching:
             print(
                 f"  Error - ?info for instrospection - status_code: {response.status_code}: {response.text.strip()}")
 
-    @staticmethod
-    def check_background_jobs(env):
-        print('## Background job status')
-        if env in ['test', 'dev']:
-            print(f"  On {env}: Skip Check background job status")
-            return
-
-        if env == "prd":
-            background_jobs = VerifyAfterPatching.BACKGROUND_JOBS_PRD
-        else:
-            background_jobs = VerifyAfterPatching.BACKGROUND_JOBS_STG
-
-        i = 0
-        for job, should_be_running in background_jobs.items():
-            i += 1
-            cmd = f"cdlsysctl status {job} | grep 'active (running)'"
-            result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            if result.returncode == 0:
-                if should_be_running:
-                    print(f"  ok - {job} active running")
-                else:
-                    print(f"  Error - {job} should not be running")
-            else:
-                if should_be_running:
-                    print(f"  Error  - {job} is not running")
-                else:
-                    print(f"  Info - {job} is not running")
-
 
     def check_batch_download(self, notify_email):
         print("## Check batch download from S3")
@@ -497,7 +443,7 @@ class VerifyAfterPatching:
     def check_resolver(self):
         item = "Verify Resolver function"
         id = "ark%3A%2F12345%2Ffk1234"
-        status = self._get_status(f"{base_url}/{id}", allow_redirects=False)
+        status = self._get_status(f"{self.base_url}/{id}", allow_redirects=False)
         if status['success'] and status['status_code'] == 302 and 'http://www.cdlib.org/services' in status['location']:
             print(f"  ok - {item}")
         else:
@@ -530,7 +476,7 @@ def main():
     }
     base_url = base_urls.get(env)
 
-    vap = VerifyAfterPatching(base_url, user, password)
+    vap = VerifyEzidStatus(base_url, user, password)
 
     vap.verify_ezid_status()
     vap.verify_ezid_version(version)
@@ -551,8 +497,6 @@ def main():
     vap.verify_prefix_matching()
 
     vap.verify_introspection()
-
-    vap.check_background_jobs(env)
 
     vap.check_batch_download(notify_email)
 
