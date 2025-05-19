@@ -441,13 +441,13 @@ class VerifyEzidStatus:
 
 
     def check_resolver(self):
-        item = "Verify Resolver function"
+        print("## Verify Resolver function")
         id = "ark%3A%2F12345%2Ffk1234"
         status = self._get_status(f"{self.base_url}/{id}", allow_redirects=False)
         if status['success'] and status['status_code'] == 302 and 'http://www.cdlib.org/services' in status['location']:
-            print(f"  ok - {item}")
+            print(f"  ok - resolver function worked for {id}")
         else:
-            print(f"  Error - {item} - code({status['status_code']}): {status['err_msg']}")
+            print(f"  Error - resolver - code({status['status_code']}): {status['err_msg']}")
 
 
 def main():
