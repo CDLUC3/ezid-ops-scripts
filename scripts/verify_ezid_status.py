@@ -459,9 +459,14 @@ def main():
     parser.add_argument('-u', '--user', type=str, required=True, help='user name')
     parser.add_argument('-p', '--password', type=str, required=True, help='password')
     parser.add_argument('-v', '--version', type=str, required=False, help='version')
-    parser.add_argument('-n', '--notify_email', type=str, required=True, help='Email address to receive download notification.')
+    parser.add_argument('-n', '--notify_email', type=str, required=False, help='Email address to receive download notification.')
+    parser.add_argument('-s', '--skip-download', action='store_true', help='Skip batch download check')
  
     args = parser.parse_args()
+
+    if not args.skip_download and not args.notify_email:
+        parser.error("--notify_email (-n) is required unless --skip-download (-s) is specified.")
+
     env = args.env
     user = args.user
     password = args.password
@@ -498,7 +503,8 @@ def main():
 
     ves.verify_introspection()
 
-    ves.check_batch_download(notify_email)
+    if not args.skip_download:
+        ves.check_batch_download(notify_email)
 
     ves.check_resolver()
 
