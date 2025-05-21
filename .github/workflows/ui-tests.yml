@@ -1,0 +1,15 @@
+name: Run UI Tests with Chrome Driver
+
+on:
+  workflow_dispatch:
+
+
+jobs:
+  ui-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Run UI Tests
+        run: docker compose up --build --abort-on-container-exit

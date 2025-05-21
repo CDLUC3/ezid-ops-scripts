@@ -1,0 +1,30 @@
+version: "3.8"
+
+services:
+  selenium:
+    image: seleniarm/standalone-chromium:latest
+    ports:
+      - "4444:4444"
+    shm_size: 2gb
+    networks:
+      - selenium-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4444/wd/hub/status"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    
+
+  test-runner:
+    build: ./scripts
+    depends_on:
+      selenium:
+        condition: service_healthy
+    environment:
+      - SELENIUM_REMOTE_URL=http://selenium:4444/wd/hub
+    networks:
+      - selenium-network
+
+networks:
+  selenium-network:
+    driver: bridge
