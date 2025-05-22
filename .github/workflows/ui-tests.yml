@@ -2,6 +2,9 @@ name: Run UI Tests with Chrome Driver
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - 'ezid-release.log'
 
 
 jobs:
