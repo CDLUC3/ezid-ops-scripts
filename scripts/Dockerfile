@@ -6,6 +6,5 @@ COPY . .
 
 RUN pip install -r requirements.txt
 
-CMD ["python", "ezid_ui_tests_remote.py"]
 
 

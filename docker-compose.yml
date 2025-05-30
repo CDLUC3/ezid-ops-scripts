@@ -15,13 +15,23 @@ services:
       retries: 10
     
 
-  test-runner:
+  test-runner-ui:
     build: ./scripts
+    entrypoint: ["python", "ezid_ui_tests_remote.py"]
     depends_on:
       selenium:
         condition: service_healthy
     environment:
       - SELENIUM_REMOTE_URL=http://selenium:4444/wd/hub
+    networks:
+      - selenium-network
+
+  test-runner-ezid-status:
+    build: ./scripts
+    environment:
+      - APITEST_PASSWORD=$APITEST_PASSWORD
+    entrypoint: ["python", "verify_ezid_status.py"]
+    command: ["--env=stg", "--user=apitest", "--password=$APITEST_PASSWORD", "--notify_email=jing.jiang@ucop.edu"]
     networks:
       - selenium-network
 
