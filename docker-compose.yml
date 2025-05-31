@@ -29,9 +29,9 @@ services:
   test-runner-ezid-status:
     build: ./scripts
     environment:
-      - APITEST_PASSWORD=$APITEST_PASSWORD
+      - APITEST_PASSWORD=${APITEST_PASSWORD}
     entrypoint: ["python", "verify_ezid_status.py"]
-    command: ["--env=stg", "--user=apitest", "--password=$APITEST_PASSWORD", "--notify_email=jing.jiang@ucop.edu"]
+    command: ["--env=stg", "--user=apitest", "--password=${APITEST_PASSWORD}", "--notify_email=jing.jiang@ucop.edu"]
     networks:
       - selenium-network
 
