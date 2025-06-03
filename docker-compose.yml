@@ -17,21 +17,27 @@ services:
 
   test-runner-ui:
     build: ./scripts
+    env_file:
+      - .env
+    environment:
+      - APITEST_PASSWORD=${APITEST_PASSWORD}
+      - SELENIUM_REMOTE_URL=http://selenium:4444/wd/hub
     entrypoint: ["python", "ezid_ui_tests_remote.py"]
+    command: ["--env=${ENV}", "--user=apitest", "--password=${APITEST_PASSWORD}", "--user_email=jing.jiang@ucop.edu"]
     depends_on:
       selenium:
         condition: service_healthy
-    environment:
-      - SELENIUM_REMOTE_URL=http://selenium:4444/wd/hub
     networks:
       - selenium-network
 
   test-runner-ezid-status:
     build: ./scripts
+    env_file:
+      - .env
     environment:
       - APITEST_PASSWORD=${APITEST_PASSWORD}
     entrypoint: ["python", "verify_ezid_status.py"]
-    command: ["--env=stg", "--user=apitest", "--password=${APITEST_PASSWORD}", "--notify_email=jing.jiang@ucop.edu"]
+    command: ["--env=${ENV}", "--user=apitest", "--password=${APITEST_PASSWORD}", "--notify_email=jing.jiang@ucop.edu"]
     networks:
       - selenium-network
 
