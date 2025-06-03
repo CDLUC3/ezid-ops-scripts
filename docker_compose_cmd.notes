@@ -1,0 +1,40 @@
+# Remove existing container by name:
+docker rm -f selenium
+
+# stops and removes all containers in the docker-compose.yml
+docker compose down
+
+# run the docker-compose file 
+docker compose up --build
+
+The selenium container starts up and waits on port 4444.
+
+The test-runner container installs selenium, runs test_ui.py, then exits.
+
+# pass the environment variable MY_SECRET_TOKEN
+APITEST_PASSWORD=xxx docker compose up --build
+
+# rerunning just the test
+docker compose run --rm test-runner
+
+# To re-run everything (fresh)
+docker compose up --force-recreate
+
+## test without docker-compose
+# start docker standalone Chrome container
+docker run -d -p 4444:4444 --name selenium seleniarm/standalone-chromium:latest
+
+# run test script
+python ezid_ui_tests_remote.py
+
+
+## Summary: Precedence Order for environment variables in Docker Compose
+
+When using Docker Compose, environment variables can be set in various ways. The precedence order for these variables is as follows:
+Priority	Source	Example
+1	Inline in docker compose call	MY_SECRET_TOKEN=inline docker compose up
+2	Shell or GitHub Actions env: block	env: MY_SECRET_TOKEN: ${{ secrets.MY_SECRET_TOKEN }}
+3	.env file	.env → MY_SECRET_TOKEN=dotenv_value
+4	Hardcoded in docker-compose.yml	MY_SECRET_TOKEN: fallback_value
+
+
