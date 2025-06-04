@@ -400,12 +400,14 @@ class VerifyEzidStatus:
 
     def check_batch_download(self, notify_email):
         print("## Check batch download from S3")
-        data = {
-            'format': 'csv',
-            'type': 'ark',
-            'column': '_id',
-            'notify': notify_email,
-        }
+        data = [
+            ('format', 'csv'),
+            ('type', 'ark'),
+            ('column', '_id'),
+            ('column', '_mappedCreator'),
+            ('column', '_mappedTitle'),
+            ('notify', notify_email)
+        ]
         url = f"{self.base_url}/download_request"
 
         # post download requst
