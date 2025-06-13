@@ -28,7 +28,7 @@ docker compose up --force-recreate
 docker run -d -p 4444:4444 --name selenium seleniarm/standalone-chromium:latest
 
 # run test script
-python ezid_ui_tests_remote.py
+python ezid_ui_tests_docker.py
 
 
 ## Summary: Precedence Order for environment variables in Docker Compose

@@ -22,8 +22,8 @@ services:
     environment:
       - APITEST_PASSWORD=${APITEST_PASSWORD}
       - SELENIUM_REMOTE_URL=http://selenium:4444/wd/hub
-    entrypoint: ["python", "ezid_ui_tests_remote.py"]
-    command: ["--env=${ENV}", "--user=apitest", "--password=${APITEST_PASSWORD}", "--user_email=jing.jiang@ucop.edu"]
+    entrypoint: ["python", "ezid_ui_tests_docker.py"]
+    command: ["--env=${ENV}", "--user=apitest", "--password=${APITEST_PASSWORD}", "--user_email=${USER_EMAIL}"]
     depends_on:
       selenium:
         condition: service_healthy
@@ -37,7 +37,7 @@ services:
     environment:
       - APITEST_PASSWORD=${APITEST_PASSWORD}
     entrypoint: ["python", "verify_ezid_status.py"]
-    command: ["--env=${ENV}", "--user=apitest", "--password=${APITEST_PASSWORD}", "--notify_email=jing.jiang@ucop.edu"]
+    command: ["--env=${ENV}", "--user=apitest", "--password=${APITEST_PASSWORD}", "--notify_email=${NOTIFICATION_EMAIL}"]
     networks:
       - selenium-network
 
