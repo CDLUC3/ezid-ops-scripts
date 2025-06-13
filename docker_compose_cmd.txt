@@ -4,12 +4,15 @@ docker rm -f selenium
 # stops and removes all containers in the docker-compose.yml
 docker compose down
 
-# run the docker-compose file 
+# run the docker-compose file to build docker images and start the containers/services
 docker compose up --build
 
 The selenium container starts up and waits on port 4444.
 
 The test-runner container installs selenium, runs test_ui.py, then exits.
+
+# build the docker images without running the services 
+docker compose build
 
 # pass the environment variable MY_SECRET_TOKEN
 APITEST_PASSWORD=xxx docker compose up --build

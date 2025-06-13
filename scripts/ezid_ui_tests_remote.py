@@ -4,6 +4,9 @@ import argparse
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import WebDriverException
 
 class EzidUiTest:
@@ -11,6 +14,47 @@ class EzidUiTest:
         self.base_url = base_url
         self.user = user
         self.password = password
+
+    def test_page_load(driver, base_url):
+        print("Testing page load...")
+        try:
+            # Open a webpage
+            driver.get(base_url)
+
+            print("Page title is:", driver.title)
+            assert "EZID Home" in driver.title, "Page title does not contain 'EZID'"
+            print("Page loaded successfully - PASSED")
+        except Exception as e:
+            print(f"An error occurred while loading the page: {e}")
+
+    def ui_test_creator_ark(self, driver):
+        print("Testing create ARK ...")
+        # Open a webpage
+        driver.get(self.base_url)
+
+        target_input = driver.find_element(By.ID, "target")
+        target_input.send_keys("https://google.com")
+        who_input = driver.find_element(By.ID, "erc.who")
+        who_input.send_keys("test ark who")
+        what_input = driver.find_element(By.ID, "erc.what")
+        what_input.send_keys("test ark what")
+        when_input = driver.find_element(By.ID, "erc.when")
+        when_input.send_keys("2024")
+        
+        time.sleep(2)
+        create_button = driver.find_element(By.XPATH, "//button[@class='home__button-primary']")
+        create_button.click()
+
+        time.sleep(1)
+        wait = WebDriverWait(driver, 10)
+        alert_text = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "alert-text")))
+        
+        assert "Identifier Created" in alert_text.text
+        assert "Identifier Details" in driver.page_source
+        assert "ark:/99999/fk4" in driver.page_source
+
+        time.sleep(2)
+        print("Testing create ARK ... PASSED")
 
 def create_driver(selenium_url, options):
     retries = 5
@@ -24,18 +68,6 @@ def create_driver(selenium_url, options):
             print(f"Retry {attempt+1}/{retries} failed: {e}")
             time.sleep(5)
     raise RuntimeError("Failed to connect to Selenium server.")
-
-
-def test_page_load(driver, base_url):
-    print("Testing page load...")
-    try:
-        # Open a webpage
-        driver.get(base_url)
-
-        # Example: Print the page title
-        print("Page title is:", driver.title)
-    except Exception as e:
-        print(f"An error occurred while loading the page: {e}")
 
 
 def main():
@@ -85,7 +117,11 @@ def main():
         print("Initializing WebDriver...")
         driver = create_driver(selenium_url, options)
         print("WebDriver initialized successfully")
-        test_page_load(driver, base_url)
+
+        print("Running UI tests...")
+        ui_test.test_page_load(driver)
+        ui_test.ui_test_creator_ark(driver)
+        
     except Exception as e:
         print(f"An error occurred: {e}")
         driver.quit()
