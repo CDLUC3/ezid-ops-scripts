@@ -19,20 +19,18 @@ class EzidUiTest:
         self.email = email
 
     def ui_test_page_load(self, driver):
-        print("Testing page load...")
+        print("## Testing page load...")
         try:
             # Open a webpage
             driver.get(self.base_url)
-
-            print("Page title is:", driver.title)
             assert "EZID Home" in driver.title, "Page title does not contain 'EZID'"
-            print("Page loaded successfully - PASSED")
+            print("  ok - Load page - PASSED")
         except Exception as e:
-            print(f"An error occurred while loading the page: {e}")
+            print(f"ERROR: An error occurred while loading the page: {e}")
 
 
     def ui_test_login_logout(self, driver):
-        print("Testing login/logout ... ")
+        print("## Testing login/logout ... ")
         driver.get(self.base_url)
 
         # Find and click the login button
@@ -56,7 +54,7 @@ class EzidUiTest:
         wait = WebDriverWait(driver, 10)
         alert_text = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "alert-text")))
         assert "Password required" in alert_text.text
-        print("Password required - PASSED")
+        print("  ok - Password is required for login - PASSED")
         time.sleep(1)
 
         password_input = driver.find_element("xpath", "//input[@type='password' and @class='fcontrol__text-field-inline']")
@@ -72,7 +70,7 @@ class EzidUiTest:
         wait = WebDriverWait(driver, 10)
         alert_text = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "alert-text")))
         assert "Login failed" in alert_text.text
-        print("Login failed due to wrong password - PASSED")
+        print("  ok - Login failed due to wrong password - PASSED")
         time.sleep(2)
 
         password_input = driver.find_element("xpath", "//input[@type='password' and @class='fcontrol__text-field-inline']")
@@ -89,7 +87,7 @@ class EzidUiTest:
 
         assert "Login successful" in alert_text.text
         assert f"Welcome {self.user}" in driver.page_source
-        print("Login successful - PASSED")
+        print("  ok - Login successful - PASSED")
         time.sleep(2)
 
         logout_button = driver.find_element("xpath", "//button[@class='header__loginout-link']")
@@ -99,13 +97,13 @@ class EzidUiTest:
         wait = WebDriverWait(driver, 10)
         alert_text = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "alert-text")))
         assert "You have been logged out" in alert_text.text
-        print("Logout successful - PASSED")
+        print("  ok - Logout successful - PASSED")
         
         time.sleep(3)
-        print("Testing login/logout ... PASSED")
+        print("  ok - Testing login/logout - PASSED")
         
     def ui_test_creator_ark(self, driver):
-        print("Testing create ARK ...")
+        print("## Testing create ARK ...")
         # Open a webpage
         driver.get(self.base_url)
 
@@ -131,10 +129,10 @@ class EzidUiTest:
         assert "ark:/99999/fk4" in driver.page_source
 
         time.sleep(2)
-        print("Testing create ARK ... PASSED")
+        print("  ok - Testing create ARK - PASSED")
 
     def ui_test_creator_doi(self, driver):
-        print("Testing create DOI ...")
+        print("## Testing create DOI ...")
         driver.get(self.base_url)
 
         radio_button = driver.find_element(By.XPATH, "//input[@type='radio' and @id='doi:10.5072/FK2']")
@@ -172,10 +170,10 @@ class EzidUiTest:
         assert "doi:10.5072/FK2" in driver.page_source
 
         time.sleep(2)
-        print("Testing create DOI ... PASSED")
+        print("  ok - Testing create DOI - PASSED")
 
     def ui_test_contact(self, driver):
-        print("Testing the contact EZID form ...")
+        print("## Testing the contact EZID form ...")
         driver.get(self.base_url)
 
         time.sleep(1)
@@ -228,7 +226,7 @@ class EzidUiTest:
         assert "Thank you for your message. We will respond as soon as possible." in driver.page_source
 
         time.sleep(2)
-        print("Testing the contact EZID form ... PASSED")
+        print("  ok - Testing the contact EZID form - PASSED")
 
 def create_driver(selenium_url, options):
     retries = 5
