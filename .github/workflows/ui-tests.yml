@@ -1,4 +1,4 @@
-name: Run UI Tests with Chrome Driver
+name: Run EZID UI and functional tests in Docker
 
 on:
   workflow_dispatch:

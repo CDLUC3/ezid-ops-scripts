@@ -86,4 +86,17 @@ When using Docker Compose, environment variables can be set in various ways. The
 |3 | .env file | .env → MY_SECRET_TOKEN=dotenv_value |
 |4 | Hardcoded in docker-compose.yml	| MY_SECRET_TOKEN: fallback_value |
 
+## Run EZID tests using GitHub action
+A GitHub action `Run EZID UI and functional tests in Docker` is defined in the `.github/workflow/ui-test.yml` file. The action is triggered by content changes to the `.env` file. It runs the `docker compose up --build` command to build the images, start the containers and runs the tests defined in the test scripts.
 
+
+GitHub action trigger defined in `.github/workflow/ui-test.yml`:
+```
+name: Run EZID UI and functional tests in Docker
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.env'
+```
