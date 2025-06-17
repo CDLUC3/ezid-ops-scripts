@@ -18,3 +18,4 @@ jobs:
         env:
           APITEST_PASSWORD: ${{ secrets.APITEST_PASSWORD }}
         run: docker compose up --build
+        run: docker compose down
