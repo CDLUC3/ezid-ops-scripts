@@ -90,7 +90,7 @@ When using Docker Compose, environment variables can be set in various ways. The
 A GitHub action `Run EZID UI and functional tests in Docker` is defined in the `.github/workflow/ui-test.yml` file. The action is triggered by content changes to the `.env` file. It runs the `docker compose up --build` command to build the images, start the containers and runs the tests defined in the test scripts.
 
 
-GitHub action trigger defined in `.github/workflow/ui-test.yml`:
+Sample `.github/workflow/ui-test.yml`:
 ```
 name: Run EZID UI and functional tests in Docker
 
@@ -99,4 +99,17 @@ on:
   push:
     paths:
       - '.env'
+
+jobs:
+  ui-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Run UI Tests
+        env:
+          APITEST_PASSWORD: ${{ secrets.APITEST_PASSWORD }}
+        run: docker compose up --build
+
 ```
