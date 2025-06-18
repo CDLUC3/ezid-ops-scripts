@@ -15,29 +15,17 @@ services:
       retries: 10
     
 
-  test-runner-ui:
+  test-runner:
     build: ./scripts
     env_file:
       - .env
     environment:
       - APITEST_PASSWORD=${APITEST_PASSWORD}
       - SELENIUM_REMOTE_URL=http://selenium:4444/wd/hub
-    entrypoint: ["python", "ezid_ui_tests_docker.py"]
-    command: ["--env=${ENV}", "--user=apitest", "--password=${APITEST_PASSWORD}", "--user_email=${USER_EMAIL}"]
+    command: ["./run_ezid_tests.sh", "${ENV}", "apitest", "${APITEST_PASSWORD}", "${NOTIFICATION_EMAIL}"]
     depends_on:
       selenium:
         condition: service_healthy
-    networks:
-      - selenium-network
-
-  test-runner-ezid-status:
-    build: ./scripts
-    env_file:
-      - .env
-    environment:
-      - APITEST_PASSWORD=${APITEST_PASSWORD}
-    entrypoint: ["python", "verify_ezid_status.py"]
-    command: ["--env=${ENV}", "--user=apitest", "--password=${APITEST_PASSWORD}", "--notify_email=${NOTIFICATION_EMAIL}"]
     networks:
       - selenium-network
 
