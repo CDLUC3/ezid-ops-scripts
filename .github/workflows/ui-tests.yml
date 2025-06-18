@@ -14,7 +14,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Run UI Tests
+      - name: Run EZID Tests
         env:
           APITEST_PASSWORD: ${{ secrets.APITEST_PASSWORD }}
         run: docker compose up --build --abort-on-container-exit
