@@ -50,7 +50,4 @@ fi
 echo "Running UI tests..."
 python ezid_ui_tests_docker.py -e $ENV -u $USER -p $PASSWORD -n $EMAIL
 
-echo "Removing Selenium container"
-docker rm -f selenium
-
 echo "EZID tests completed successfully!"
