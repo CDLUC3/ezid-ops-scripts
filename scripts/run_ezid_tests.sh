@@ -34,14 +34,16 @@ python verify_ezid_status.py -e $ENV -u $USER -p $PASSWORD -n $EMAIL
 
 # Start standalone Chrome container
 if [ "$5" == "debug" ]; then
-  echo "Removing Selenium container in case it is up and running"
-  docker rm -f selenium
-  echo "Starting Selenium standalone Chrome container..."
+  if docker ps -a --format '{{.Names}}' | grep -Eq '^selenium$'; then
+    echo "# Debug: Removing existing 'selenium' container..."
+    docker rm -f selenium
+  fi
+  echo "# Debug: Starting Selenium standalone Chrome container..."
   docker run -d -p 4444:4444 --name selenium seleniarm/standalone-chromium:latest
-  echo "Waiting for Selenium to be ready..."
+  echo "# Debug: Waiting for Selenium to be ready..."
   until curl -sf http://localhost:4444/wd/hub/status | grep -q '"ready": true'; do
     sleep 2
-    echo "Waiting..."
+    echo "# Debug: Waiting..."
   done
 else
   echo "Selenium container should have been started. Otherwise, UI tests will fail."
@@ -49,5 +51,10 @@ fi
 
 echo "Running UI tests..."
 python ezid_ui_tests_docker.py -e $ENV -u $USER -p $PASSWORD -n $EMAIL
+
+if [ "$5" == "debug" ]; then
+  echo "# Debug: Removing 'selenium' container..."
+  docker rm -f selenium
+fi
 
 echo "EZID tests completed successfully!"
