@@ -5,15 +5,16 @@
 #  <environment>: required, the environment to test; should be dev, stg, or prd
 #  <username>: required, an username of EZID
 #  <password>: required, the password for the EZID user
-#  <email>: required, the email address used to recieve notifications
+#  <email>: required, the email address used to receive notifications
+#  <version>: required, the EZID version to test
 #  <debug_flag>: optional, if set to "debug", the script will start the standalone Chrome container "selenium"
-#  Example: ./run_ezid_tests.sh dev apitest apitest_password ezid@ucop.edu debug
+#  Example: ./run_ezid_tests.sh dev apitest apitest_password ezid@ucop.edu v3.3.15 debug
 
 set -e  # Exit on first failure
 
-if [ $# -ne 4 ] && [ $# -ne 5 ]; then
-  echo "Error: You must provide either 4 or 5 arguments."
-  echo "Usage: $0 <environment dev|stg|prd> <username> <password> <email> <optional_debug_flag>"
+if [ $# -ne 5 ] && [ $# -ne 6 ]; then
+  echo "Error: You must provide either 5 or 6 arguments."
+  echo "Usage: $0 <environment dev|stg|prd> <username> <password> <email> <version> <optional_debug_flag>"
   exit 1
 fi
 
@@ -21,6 +22,8 @@ ENV=$1
 USER=$2
 PASSWORD=$3
 EMAIL=$4
+VERSION=$5
+DEBUG=$6
 
 if [[ "$ENV" != "dev" && "$ENV" != "stg" && "$ENV" != "prd" ]]; then
   echo "Error: Environment must be one of 'dev', 'stg', or 'prd'."
@@ -30,10 +33,10 @@ fi
 echo "Starting the EZID test suite..."
 
 echo "Running functional tests..."
-python verify_ezid_status.py -e $ENV -u $USER -p $PASSWORD -n $EMAIL
+python verify_ezid_status.py -e $ENV -u $USER -p $PASSWORD -n $EMAIL -v $VERSION
 
 # Start standalone Chrome container
-if [ "$5" == "debug" ]; then
+if [ "$DEBUG" == "debug" ]; then
   if docker ps -a --format '{{.Names}}' | grep -Eq '^selenium$'; then
     echo "# Debug: Removing existing 'selenium' container..."
     docker rm -f selenium
@@ -52,7 +55,7 @@ fi
 echo "Running UI tests..."
 python ezid_ui_tests_docker.py -e $ENV -u $USER -p $PASSWORD -n $EMAIL
 
-if [ "$5" == "debug" ]; then
+if [ "$DEBUG" == "debug" ]; then
   echo "# Debug: Removing 'selenium' container..."
   docker rm -f selenium
 fi

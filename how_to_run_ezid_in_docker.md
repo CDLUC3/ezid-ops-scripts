@@ -87,12 +87,11 @@ When using Docker Compose, environment variables can be set in various ways. The
 |4 | Hardcoded in docker-compose.yml	| MY_SECRET_TOKEN: fallback_value |
 
 ## Run EZID tests using GitHub action
-A GitHub action `Run EZID UI and functional tests in Docker` is defined in the `.github/workflow/ui-test.yml` file. The action is triggered by content changes to the `.env` file. It runs the `docker compose up --build` command to build the images, start the containers and runs the tests defined in the test scripts.
+A GitHub action `Run EZID UI and functional tests in Docker` is defined in the `.github/workflow/ezid-tests.yml` file. The action is triggered by content changes to the `.env` file. It runs the `docker compose up --build` command to build the images, start the containers and then run the tests defined in the test scripts.
 
-
-Sample `.github/workflow/ui-test.yml`:
+Sample `.github/workflow/ezid-tests.yml`:
 ```
-name: Run EZID UI and functional tests in Docker
+nname: Run EZID UI and functional tests in Docker
 
 on:
   workflow_dispatch:
@@ -100,16 +99,68 @@ on:
     paths:
       - '.env'
 
+
 jobs:
-  ui-tests:
+  ezid-tests:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Run UI Tests
+      - name: Run EZID Tests
         env:
           APITEST_PASSWORD: ${{ secrets.APITEST_PASSWORD }}
-        run: docker compose up --build
+        run: docker compose up --build --abort-on-container-exit
 
+      - name: Stop and remove containers
+        if: always() 
+        run: docker compose down --volumes --remove-orphans
+```
+
+We ran into problems with the `--abort-on-container-exit` option which stops all containers when one of them exits. Since we have two test containers, one for UI and one for functional tests, using the `--abort-on-container-exit` option will always result in an imcomplete test suite. However, without the `--abort-on-container-exit` option, the selenium container will be up and running until the job time out.
+
+A wrapper Shell script `run_ezid_test.sh` was developed to resolve this issue. The script combines both the UI and funcitonal tests so we can use a single container for all types of tests.
+
+## How to run `run_ezid_test.sh`
+The `run_ezid_test.sh` script takes 5 or 6 positional parameters:
+
+Usage: ./run_ezid_tests.sh <environment> <username> <password> <email> <version> <debug_flag>
+
+The paramters are all required except the last one `debug_flag` which is optional.
+
+1. To run the script with the debug option, for example:
+```
+./run_ezid_tests.sh stg apitest apitest_password ezid@ucop.edu v3.3.15 debug
+```
+The debug option will instruct the script to start a standalone Selenium Chrome container for you.
+
+2. To run the script without the debug option:
+
+First, manually start a standalone Selenium Chrome container:
+```
+docker run -d -p 4444:4444 --name selenium seleniarm/standalone-chromium:latest
+```
+Then run the tests:
+```
+./run_ezid_tests.sh stg apitest apitest_password ezid@ucop.edu v3.3.15
+```
+Last, remove the `selenium` container:
+```
+docker rm -f selenium
+```
+
+3. To run the script using docker compose command
+The `docker-compose.yml` file is defined with the following command:
+```
+command: ["./run_ezid_tests.sh", "${ENV}", "apitest", "${APITEST_PASSWORD}", "${NOTIFICATION_EMAIL}", "${EZID_VER}"]
+```
+
+The following environment variables are defined in the `.env` file:
+- ENV
+- NOTIFICATION_EMAIL
+- EZID_VER
+
+Pass the API password in command line:
+```
+APITEST_PASSWORD=xxx docker compose up --build
 ```
