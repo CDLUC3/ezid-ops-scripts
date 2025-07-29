@@ -16,12 +16,14 @@ It defines and manages multiple Docker containers (services) in one file.
 
 **The .env file***
 The `.env` file is located in the root directory of the `EZID-OPS-SCRIPTS` repo.
-It stores environment variables, which can be used in both docker-compose.yml and Dockerfiles.
+It stores environment variables, which can be used in both `docker-compose.yml` and `Dockerfile`.
 
 **Services defined in the `docker-compose.yml` file**
 * selenium - a standalone-chromium
 * test-runner-ui - a sesrvice runs the `ezid_ui_tests_docker.py` script
 * test-runner-ezid-status- a service runs the `verify_ezid_status.py` script
+
+Note: the `docker-compose.yml` was updated later with a single container combining both the UI and EZID status tests.
 
 ## Docker compose commands
 
@@ -75,7 +77,6 @@ Run the test script
 python ezid_ui_tests_docker.py -e stg -u apitest -p apitest_password -n ezid_test_email@ucop.edu
 ```
 
-
 ## Precedence Order for environment variables in Docker Compose
 
 When using Docker Compose, environment variables can be set in various ways. The precedence order for these variables is as follows:
@@ -87,7 +88,7 @@ When using Docker Compose, environment variables can be set in various ways. The
 |4 | Hardcoded in docker-compose.yml	| MY_SECRET_TOKEN: fallback_value |
 
 ## Run EZID tests using GitHub action
-A GitHub action `Run EZID UI and functional tests in Docker` is defined in the `.github/workflow/ezid-tests.yml` file. The action is triggered by content changes to the `.env` file. It runs the `docker compose up --build` command to build the images, start the containers and then run the tests defined in the test scripts.
+A GitHub action `Run EZID UI and functional tests in Docker` is defined in the `.github/workflow/ezid-tests.yml` file. The action is triggered by content changes to the `.env` file. It runs the `docker compose up --build` command to build the images, start the containers and then run the test suites.
 
 Sample `.github/workflow/ezid-tests.yml`:
 ```
@@ -164,3 +165,7 @@ Pass the API password in command line:
 ```
 APITEST_PASSWORD=xxx docker compose up --build
 ```
+
+4. To run the script through GitHub action
+
+Update the `.env` file then push the changes to GitHub. This will trigger a GitHub action to run the tests.
