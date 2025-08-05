@@ -1,7 +1,7 @@
 #!/bin/bash
 # script name: run_ezid_tests.sh
 # This script runs the EZID test suite, including functional and UI tests.
-# Usage: ./run_ezid_tests.sh <environment> <username> <password> <email> <debug_flag>
+# Usage: ./run_ezid_tests.sh <environment> <username> <password> <email> <version> <debug_flag>
 #  <environment>: required, the environment to test; should be dev, stg, or prd
 #  <username>: required, an username of EZID
 #  <password>: required, the password for the EZID user
@@ -33,7 +33,12 @@ fi
 echo "Starting the EZID test suite..."
 
 echo "Running functional tests..."
-python verify_ezid_status.py -e $ENV -u $USER -p $PASSWORD -n $EMAIL -v $VERSION
+if [[ "$ENV" != "dev" ]]; then
+  python verify_ezid_status.py -e $ENV -u $USER -p $PASSWORD -n $EMAIL -v $VERSION
+else
+  python verify_ezid_status.py -e $ENV -u $USER -p $PASSWORD -n $EMAIL -v $VERSION -s
+fi
+
 
 # Start standalone Chrome container
 if [ "$DEBUG" == "debug" ]; then
