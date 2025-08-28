@@ -1,0 +1,31 @@
+# Option 1: Build and push for amd64
+# image size: 1.7GB
+# build
+docker buildx build \
+--platform linux/amd64 \
+-t 671846987296.dkr.ecr.us-west-2.amazonaws.com/ezid/n2t-router:latest .
+
+# push
+docker push 671846987296.dkr.ecr.us-west-2.amazonaws.com/ezid/n2t-router:latest
+
+# build & push
+docker buildx build \
+--platform linux/amd64 \
+-t 671846987296.dkr.ecr.us-west-2.amazonaws.com/ezid/n2t-router:latest \
+--push .
+
+
+Note: Authentication is required to push a Docker image to AWS.
+Otherwise push will fail with error.
+ERROR: 403 Forbidden
+
+1. Get credentials and Set AWS environment variables:
+
+export AWS_ACCESS_KEY_ID="access key id"
+export AWS_SECRET_ACCESS_KEY="secret key"
+export AWS_SESSION_TOKEN="session token"
+
+2. Login to AWS
+
+aws ecr get-login-password --region us-west-2 \
+  | docker login --username AWS --password-stdin 671846987296.dkr.ecr.us-west-2.amazonaws.com
