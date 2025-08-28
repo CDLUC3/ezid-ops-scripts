@@ -229,7 +229,7 @@ def main():
     parser.add_argument('-e', '--env', type=str, required=True, choices=['test', 'dev', 'stg', 'prd'], help='Environment')
     parser.add_argument('-u', '--user', type=str, required=True, help='user name')
     parser.add_argument('-p', '--password', type=str, required=True, help='password')
-    parser.add_argument('-m', '--user_email', type=str, required=True, help='Email address for testing the Contact Us form.')
+    parser.add_argument('-n', '--user_email', type=str, required=True, help='Email address for testing the Contact Us form.')
     parser.add_argument('-l', '--headless', action='store_true', required=False, help='Enable headless mode.')
  
     args = parser.parse_args()

@@ -505,10 +505,11 @@ def main():
 
     ves.verify_introspection()
 
+    ves.check_resolver()
+
     if not args.skip_download:
         ves.check_batch_download(notify_email)
 
-    ves.check_resolver()
 
 if __name__ == "__main__":
     main()

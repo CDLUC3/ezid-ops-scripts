@@ -1,0 +1,24 @@
+name: Run EZID UI and functional tests in Docker
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.env'
+
+
+jobs:
+  ezid-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Run EZID Tests
+        env:
+          APITEST_PASSWORD: ${{ secrets.APITEST_PASSWORD }}
+        run: docker compose up --build --abort-on-container-exit
+
+      - name: Stop and remove containers
+        if: always() 
+        run: docker compose down --volumes --remove-orphans
