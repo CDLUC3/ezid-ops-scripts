@@ -1,4 +1,4 @@
-# Option 1: Build and push for amd64
+# Build and push for amd64
 # image size: 1.7GB
 # build
 docker buildx build \
