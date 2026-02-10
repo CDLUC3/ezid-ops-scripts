@@ -232,6 +232,44 @@ class VerifyEzidStatus:
         else:
             print(f"  error: cleared session should fail - {verify_response.status_code} - {verify_response.text.strip()}")
 
+    def verify_one_time_login_logout(self):
+        print("## Verify one time login and logout")
+        login_url = f"{self.base_url}/login"
+        test_url = f"{self.base_url}/shoulder/ark:/99999/fk4"  # try minting an identifier, w/ POST
+        logout_url = f"{self.base_url}/logout"
+
+        # Start a session to persist cookies
+        session = requests.Session()
+
+        # Perform login using HTTP Basic Auth
+        response = session.get(login_url, auth=HTTPBasicAuth(self.user, self.password))
+
+        if response.status_code != 200:
+            print(f"  Error: Login failed -- {response.status_code} - {response.text.strip()}")
+            return None
+
+        # Session cookie is now stored in session.cookies
+        print("  ok - Login successful. Session cookie obtained")
+
+        # Perform a test request using the authenticated session
+        verify_response = session.post(test_url)
+        if verify_response.status_code == 201:
+            print("  ok - Session verified")
+        else:
+            print(f"  error: authenticated session failed: {verify_response.status_code} - {verify_response.text.strip()}")
+
+        # Perform logout
+        verify_response = session.get(logout_url)
+        if verify_response.status_code == 200:
+            print(f"  ok - Logout performed - {verify_response.status_code} - {verify_response.text.strip()}")
+        else:
+            print(f"  error: logout failed - {verify_response.status_code} - {verify_response.text.strip()}")
+
+        verify_response = session.post(test_url)
+        if verify_response.status_code == 401:
+            print("  ok - Session gives bad request after logout")
+        else:
+            print(f"  error: session should fail after logout - {verify_response.status_code} - {verify_response.text.strip()}")
 
     def verify_create_identifier_status(self):
         print("## Mint (create) identifier")
@@ -483,6 +521,8 @@ def main():
     }
     base_url = base_urls.get(env)
 
+    print(f"Starting EZID test suite on environment: {env} ({base_url})")
+
     ves = VerifyEzidStatus(base_url, user, password)
 
     ves.verify_ezid_status()
@@ -491,6 +531,8 @@ def main():
     ves.verify_search_function()
 
     ves.verify_one_time_login()
+
+    ves.verify_one_time_login_logout()
 
     created_ids = ves.verify_create_identifier_status()
     ves.verify_update_identifier_status(created_ids)

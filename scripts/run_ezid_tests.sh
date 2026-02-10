@@ -2,7 +2,7 @@
 # script name: run_ezid_tests.sh
 # This script runs the EZID test suite, including functional and UI tests.
 # Usage: ./run_ezid_tests.sh <environment> <username> <password> <email> <version> <debug_flag>
-#  <environment>: required, the environment to test; should be dev, stg, or prd
+#  <environment>: required, the environment to test; should be test, dev, stg, or prd
 #  <username>: required, an username of EZID
 #  <password>: required, the password for the EZID user
 #  <email>: required, the email address used to receive notifications
@@ -14,7 +14,7 @@ set -e  # Exit on first failure
 
 if [ $# -ne 5 ] && [ $# -ne 6 ]; then
   echo "Error: You must provide either 5 or 6 arguments."
-  echo "Usage: $0 <environment dev|stg|prd> <username> <password> <email> <version> <optional_debug_flag>"
+  echo "Usage: $0 <environment test|dev|stg|prd> <username> <password> <email> <version> <optional_debug_flag>"
   exit 1
 fi
 
@@ -25,15 +25,15 @@ EMAIL=$4
 VERSION=$5
 DEBUG=$6
 
-if [[ "$ENV" != "dev" && "$ENV" != "stg" && "$ENV" != "prd" ]]; then
-  echo "Error: Environment must be one of 'dev', 'stg', or 'prd'."
+if [[ "$ENV" != "test" && "$ENV" != "dev" && "$ENV" != "stg" && "$ENV" != "prd" ]]; then
+  echo "Error: Environment must be one of 'test', 'dev', 'stg', or 'prd'."
   exit 1
 fi
 
 echo "Starting the EZID test suite..."
 
 echo "Running functional tests..."
-if [[ "$ENV" != "dev" ]]; then
+if [[ "$ENV" == "stg" || "$ENV" == "prd" ]]; then
   python verify_ezid_status.py -e $ENV -u $USER -p $PASSWORD -n $EMAIL -v $VERSION
 else
   python verify_ezid_status.py -e $ENV -u $USER -p $PASSWORD -n $EMAIL -v $VERSION -s
