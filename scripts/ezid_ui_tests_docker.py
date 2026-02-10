@@ -172,7 +172,7 @@ class EzidUiTest:
         time.sleep(2)
         print("  ok - Testing create DOI - PASSED")
 
-    def ui_test_contact(self, driver):
+    def ui_test_contact(self, driver, env):
         print("## Testing the contact EZID form ...")
         driver.get(self.base_url)
 
@@ -223,7 +223,10 @@ class EzidUiTest:
         submit_button.click()
 
         time.sleep(2)
-        assert "Thank you for your message. We will respond as soon as possible." in driver.page_source
+        if env == "test":
+            assert "There was a problem sending your email" in driver.page_source
+        else:
+            assert "Thank you for your message. We will respond as soon as possible." in driver.page_source
 
         time.sleep(2)
         print("  ok - Testing the contact EZID form - PASSED")
@@ -258,6 +261,7 @@ def main():
     email = args.user_email
   
     base_urls = {
+        "test": "http://host.docker.internal:8000",
         "dev": "https://ezid-dev.cdlib.org",
         "stg": "https://ezid-stg.cdlib.org",
         "prd": "https://ezid.cdlib.org"
@@ -289,7 +293,7 @@ def main():
         ui_test.ui_test_login_logout(driver)
         ui_test.ui_test_creator_ark(driver)
         ui_test.ui_test_creator_doi(driver)
-        ui_test.ui_test_contact(driver)
+        ui_test.ui_test_contact(driver, env)
         print("UI completed")
         
     except Exception as e:
