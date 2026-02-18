@@ -265,7 +265,7 @@ def main():
     parser.add_argument('-p', '--password', type=str, required=True, help='password')
     parser.add_argument('-n', '--user_email', type=str, required=True, help='Email address for testing the Contact Us form.')
     parser.add_argument('-s', '--selenium_url', type=str, required=False, help='Selenium URL for remote testing.')
-    parser.add_argument('-l', '--local_browser', action='store_true', required=False, help='Use local browser instead of remote Selenium server.')
+    parser.add_argument('-l', '--local_browser', action='store_true', required=False, help='Use local Chrome browser instead of remote Selenium server.')
  
     args = parser.parse_args()
     env = args.env
