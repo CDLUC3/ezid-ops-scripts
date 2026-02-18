@@ -315,10 +315,12 @@ def main():
         
     except Exception as e:
         print(f"An error occurred: {e}")
-        driver.quit()
+        if not local_browser:
+            driver.quit()
         return
     finally:
-        driver.quit()
+        if not local_browser:
+            driver.quit()
 
 
 if __name__ == '__main__':
