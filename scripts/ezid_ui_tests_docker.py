@@ -3,6 +3,7 @@ import time
 import argparse
 
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -235,15 +236,20 @@ def create_driver(selenium_url, options):
     retries = 5
     for attempt in range(retries):
         try:
-            return webdriver.Remote(
-                command_executor=selenium_url,
-                options=options
-            )
+            if selenium_url:
+                return webdriver.Remote(
+                    command_executor=selenium_url,
+                    options=options
+                )
+            else:
+                return webdriver.Chrome(
+                    service=Service(),
+                    options=options
+                )
         except WebDriverException as e:
             print(f"Retry {attempt+1}/{retries} failed: {e}")
             time.sleep(5)
     raise RuntimeError("Failed to connect to Selenium server.")
-
 
 def main():
     parser = argparse.ArgumentParser(description='Get EZID records by identifier.')
@@ -253,12 +259,14 @@ def main():
     parser.add_argument('-u', '--user', type=str, required=True, help='user name')
     parser.add_argument('-p', '--password', type=str, required=True, help='password')
     parser.add_argument('-n', '--user_email', type=str, required=True, help='Email address for testing the Contact Us form.')
+    parser.add_argument('-l', '--local_browser', action='store_true', required=False, help='Use local browser instead of remote Selenium server.')
  
     args = parser.parse_args()
     env = args.env
     user = args.user
     password = args.password
     email = args.user_email
+    local_browser = args.local_browser
   
     base_urls = {
         "test": "http://host.docker.internal:8000",
@@ -269,19 +277,28 @@ def main():
     base_url = base_urls.get(env)
 
     options = Options()
-    options.add_argument("--headless=new")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-gpu")
-    options.add_argument("--window-size=1920,1080")
+    selenium_url = None
 
-    ui_test = EzidUiTest(base_url, user, password, email)
+    if local_browser:
+        print("Running UI tests using local browser")
+        options.add_argument("--start-maximized")
+        # Optional: keep browser open after script ends (very useful)
+        options.add_experimental_option("detach", True)
+    else:
+        print("Running UI tests using remote Selenium server")
+        options.add_argument("--headless=new")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--window-size=1920,1080")
 
-    try:
-        selenium_url = os.environ["SELENIUM_REMOTE_URL"]
-    except KeyError:
-        selenium_url = "http://localhost:4444/wd/hub"
+        try:
+            selenium_url = os.environ["SELENIUM_REMOTE_URL"]
+        except KeyError:
+            selenium_url = "http://localhost:4444/wd/hub"
+
     print("Selenium URL:", selenium_url)
+    ui_test = EzidUiTest(base_url, user, password, email)
 
     try:
         print("Initializing WebDriver...")
@@ -302,8 +319,6 @@ def main():
         return
     finally:
         driver.quit()
-
-
 
 
 if __name__ == '__main__':
