@@ -233,26 +233,31 @@ class EzidUiTest:
         print("  ok - Testing the contact EZID form - PASSED")
 
 def create_driver(selenium_url, options):
-    retries = 5
-    for attempt in range(retries):
-        try:
-            if selenium_url:
+    error_message = ""
+    if selenium_url:
+        retries = 5
+        for attempt in range(retries):
+            try:
                 return webdriver.Remote(
                     command_executor=selenium_url,
                     options=options
                 )
-            else:
-                return webdriver.Chrome(
-                    service=Service(),
-                    options=options
-                )
-        except WebDriverException as e:
-            print(f"Retry {attempt+1}/{retries} failed: {e}")
+            except WebDriverException as e:
+                print(f"Retry {attempt+1}/{retries} failed: {e}")
             time.sleep(5)
-    raise RuntimeError("Failed to connect to Selenium server.")
+        error_message = f"Failed to connect to Selenium server at {selenium_url}."
+    else:
+        try:
+            return webdriver.Chrome(
+                service=Service(),
+                options=options
+            )
+        except WebDriverException as e:
+            error_message = f"Failed to initialize local Chrome browser: {e}"
+    raise RuntimeError(error_message)
 
 def main():
-    parser = argparse.ArgumentParser(description='Get EZID records by identifier.')
+    parser = argparse.ArgumentParser(description='Run EZID UI tests using Selenium WebDriver.')
 
     # add input and output filename arguments to the parser
     parser.add_argument('-e', '--env', type=str, required=True, choices=['test', 'dev', 'stg', 'prd'], help='Environment')
