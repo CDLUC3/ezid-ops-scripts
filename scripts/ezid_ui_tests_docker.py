@@ -264,6 +264,7 @@ def main():
     parser.add_argument('-u', '--user', type=str, required=True, help='user name')
     parser.add_argument('-p', '--password', type=str, required=True, help='password')
     parser.add_argument('-n', '--user_email', type=str, required=True, help='Email address for testing the Contact Us form.')
+    parser.add_argument('-s', '--selenium_url', type=str, required=False, help='Selenium URL for remote testing.')
     parser.add_argument('-l', '--local_browser', action='store_true', required=False, help='Use local browser instead of remote Selenium server.')
  
     args = parser.parse_args()
@@ -271,6 +272,7 @@ def main():
     user = args.user
     password = args.password
     email = args.user_email
+    selenium_url = args.selenium_url
     local_browser = args.local_browser
   
     base_urls = {
@@ -282,24 +284,21 @@ def main():
     base_url = base_urls.get(env)
 
     options = Options()
-    selenium_url = None
 
     if local_browser:
         print("Running UI tests using local browser")
         options.add_argument("--start-maximized")
     else:
-        print("Running UI tests using remote Selenium server")
+        if not selenium_url:
+             selenium_url = os.environ.get("SELENIUM_REMOTE_URL", "http://localhost:4444/wd/hub")
+        print(f"Running UI tests using remote Selenium server: {selenium_url}")
+        print("UI tests will fail if the Selenium server is not running or not accessible.")
+
         options.add_argument("--headless=new")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-gpu")
         options.add_argument("--window-size=1920,1080")
-
-        try:
-            selenium_url = os.environ["SELENIUM_REMOTE_URL"]
-        except KeyError:
-            selenium_url = "http://localhost:4444/wd/hub"
-        print("Selenium URL:", selenium_url)
 
     ui_test = EzidUiTest(base_url, user, password, email)
 
