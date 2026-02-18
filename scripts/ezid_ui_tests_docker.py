@@ -299,8 +299,8 @@ def main():
             selenium_url = os.environ["SELENIUM_REMOTE_URL"]
         except KeyError:
             selenium_url = "http://localhost:4444/wd/hub"
+        print("Selenium URL:", selenium_url)
 
-    print("Selenium URL:", selenium_url)
     ui_test = EzidUiTest(base_url, user, password, email)
 
     try:
