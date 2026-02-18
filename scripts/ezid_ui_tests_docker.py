@@ -282,8 +282,6 @@ def main():
     if local_browser:
         print("Running UI tests using local browser")
         options.add_argument("--start-maximized")
-        # Optional: keep browser open after script ends (very useful)
-        options.add_experimental_option("detach", True)
     else:
         print("Running UI tests using remote Selenium server")
         options.add_argument("--headless=new")
