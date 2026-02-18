@@ -2,6 +2,7 @@
 static/
 .DS_Store
 current_work.md
+.env
 
 # Files
 *.pyc
