@@ -315,8 +315,6 @@ def main():
         
     except Exception as e:
         print(f"An error occurred: {e}")
-        if not local_browser:
-            driver.quit()
         return
     finally:
         if not local_browser:
