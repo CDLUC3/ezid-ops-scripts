@@ -58,7 +58,7 @@ else
 fi
 
 echo "Running UI tests..."
-python ezid_ui_tests_docker.py -e $ENV -u $USER -p $PASSWORD -n $EMAIL
+python ezid_ui_tests.py -e $ENV -u $USER -p $PASSWORD -n $EMAIL
 
 if [ "$DOCKER" == "docker" ]; then
   echo "# Debug: Removing 'selenium' container..."
