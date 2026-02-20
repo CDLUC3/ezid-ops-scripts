@@ -257,7 +257,10 @@ def create_driver(selenium_url, options):
     raise RuntimeError(error_message)
 
 def main():
-    parser = argparse.ArgumentParser(description='Run EZID UI tests using Selenium WebDriver.')
+    desciription = ('Run EZID UI tests using local Chrome browser or a remote Selenium server. '
+     'Remote Selenium server can be started using the standalone-chromium image in Docker. '
+     'Example: docker run -d -p 4444:4444 --name selenium selenium/standalone-chromium:latest')
+    parser = argparse.ArgumentParser(description=desciription)
 
     # add input and output filename arguments to the parser
     parser.add_argument('-e', '--env', type=str, required=True, choices=['test', 'dev', 'stg', 'prd'], help='Environment')
