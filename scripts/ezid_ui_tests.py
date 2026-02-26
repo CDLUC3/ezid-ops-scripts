@@ -289,7 +289,11 @@ def main():
     options = Options()
 
     if local_browser:
-        print("Running UI tests using local browser")
+        print("Running UI tests using local browser.")
+        print("Make sure Chrome browser is installed. Command line option --selenium_url will be ignored if provided.")
+        if env == "test":
+            base_url = "http://localhost:8000"
+        selenium_url = None
         options.add_argument("--start-maximized")
     else:
         if not selenium_url:
