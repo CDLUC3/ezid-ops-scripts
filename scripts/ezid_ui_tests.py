@@ -298,8 +298,10 @@ def main():
     else:
         if not selenium_url:
              selenium_url = os.environ.get("SELENIUM_REMOTE_URL", "http://localhost:4444/wd/hub")
-        print(f"Running UI tests using remote Selenium server: {selenium_url}")
+        print(f"Running UI tests using Selenium server: {selenium_url}")
         print("UI tests will fail if the Selenium server is not running or not accessible.")
+        print("If needed, start a Selenium server using the following command before running this script:")
+        print("docker run -d -p 4444:4444 --name selenium seleniarm/standalone-chromium:latest")
 
         options.add_argument("--headless=new")
         options.add_argument("--no-sandbox")

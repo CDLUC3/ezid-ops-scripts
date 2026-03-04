@@ -3,6 +3,7 @@ version: "3.8"
 services:
   selenium:
     image: seleniarm/standalone-chromium:latest
+    hostname: selenium
     ports:
       - "4444:4444"
     shm_size: 2gb
