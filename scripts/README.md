@@ -53,6 +53,10 @@ APITEST_PASSWORD=xxx docker compose up --build
 3. Another way to perform the combined tests is to update the `.env` file then push the change to GitHub.
 This will trigger a GitHub action defined in the `.github/workflows/ezid-tests.yml` file.
 
+A branch `testing_ezid_app` was created for this workflow. Maintain this branch on a regular base
+* merge the `main` to this branch to keep it up-to-date
+* update the `.env` file for a specific test
+
 The `.env` file defines the following environment variables:
 ```
 ENV=stg or prd
