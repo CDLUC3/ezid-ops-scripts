@@ -51,7 +51,7 @@ if [ "$DOCKER" == "docker" ]; then
   echo "# Info: Waiting for Selenium to be ready..."
   until curl -sf http://localhost:4444/wd/hub/status | grep -q '"ready": true'; do
     sleep 2
-    echo "# Info: Waiting ..."
+    echo "# Info: Waiting..."
   done
 else
   echo "Selenium container should have been started. Otherwise, UI tests will fail."

@@ -20,7 +20,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-If coming back later, activate your python version and virtual environment
+If coming back later, activate your virtual environment
 ```bash
 source venv/bin/activate
 ```
@@ -29,16 +29,16 @@ source venv/bin/activate
 
 The `run_ezid_tests.sh` script performs two sets of tests:
 1. The EZID functional and API tests done by the `verify_ezid_status.py` script.
-2. The EZID UI tests doen by the `ezid_ui_tests.py` script.
+2. The EZID UI tests done by the `ezid_ui_tests.py` script.
 
 There are three ways to run this script:
 
 1. Use a command line like the following (substituting your own values) to run the script and perform the tests.
 
 ```bash
-# environments are test/dev/stg/prod
-# set the docker_flag to "docker" to start a Selenium Chrome container for UI tests
-./run_ezid_tests.sh <env> <user> <password> <email> <version> docker_flag
+# environments are test/dev/stg/prd
+# optionally set the docker flag to "docker" to start a Selenium Chrome container for UI tests
+./run_ezid_tests.sh <env> <user> <password> <email> <version> [docker]
 ```
 
 2. Perform the tests in Docker containers
@@ -53,7 +53,7 @@ APITEST_PASSWORD=xxx docker compose up --build
 3. Another way to perform the combined tests is to update the `.env` file then push the change to GitHub.
 This will trigger a GitHub action defined in the `.github/workflows/ezid-tests.yml` file.
 
-A branch `testing_ezid_app` was created for this workflow. Maintain this branch on a regular base
+A branch `testing_ezid_app` was created for this workflow. Maintain this branch on a regular basis:
 * merge the `main` to this branch to keep it up-to-date
 * update the `.env` file for a specific test
 
@@ -82,9 +82,9 @@ All tests should pass with an `ok` message if the api is working.
 ## Running the ezid_ui_tests.py script
 The `ezid_ui_tests.py` script relies on a Selenium Chrome driver to work. There are two options to run this UI test script.
 
-1. Test using your local installer Google Chrome with Graphical User Interface.
+1. Test using your locally installed Google Chrome with GUI.
 ```bash
-# the l, --local_browser option uses local Chrome browser for UI test
+# the -l, --local_browser option uses local Chrome browser for UI test
 python ezid_ui_tests.py -e <env> -u <user> -p <password> -n <email> -l
 ```
 
@@ -92,7 +92,7 @@ python ezid_ui_tests.py -e <env> -u <user> -p <password> -n <email> -l
 
 ```bash
 # start a standalone Selenium Chrome server with url: http://localhost:4444/wd/hub
-docker run -d -p 4444:4444 --name selenium selenium/standalone-chromium:latest
+docker run -d -p 4444:4444 --name selenium seleniarm/standalone-chromium:latest
 
 # perform the test
 python ezid_ui_tests.py -e <env> -u <user> -p <password> -n <email>
