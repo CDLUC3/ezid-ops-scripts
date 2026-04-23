@@ -43,15 +43,15 @@ fi
 # Start standalone Chrome container
 if [ "$DOCKER" == "docker" ]; then
   if docker ps -a --format '{{.Names}}' | grep -Eq '^selenium$'; then
-    echo "# Debug: Removing existing 'selenium' container..."
+    echo "# Info: Removing existing 'selenium' container..."
     docker rm -f selenium
   fi
-  echo "# Debug: Starting Selenium standalone Chrome container..."
+  echo "# Info: Starting Selenium standalone Chrome container..."
   docker run -d -p 4444:4444 --name selenium seleniarm/standalone-chromium:latest
-  echo "# Debug: Waiting for Selenium to be ready..."
+  echo "# Info: Waiting for Selenium to be ready..."
   until curl -sf http://localhost:4444/wd/hub/status | grep -q '"ready": true'; do
     sleep 2
-    echo "# Debug: Waiting..."
+    echo "# Info: Waiting..."
   done
 else
   echo "Selenium container should have been started. Otherwise, UI tests will fail."
@@ -61,7 +61,7 @@ echo "Running UI tests..."
 python ezid_ui_tests.py -e $ENV -u $USER -p $PASSWORD -n $EMAIL
 
 if [ "$DOCKER" == "docker" ]; then
-  echo "# Debug: Removing 'selenium' container..."
+  echo "# Info: Removing 'selenium' container..."
   docker rm -f selenium
 fi
 
