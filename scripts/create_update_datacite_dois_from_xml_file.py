@@ -41,13 +41,46 @@ class EZIDRecordCreator:
             err_msg = "HTTPError: " + str(e)[:200]
         return success, status_code, text, err_msg
 
+
+    def _post_data(self, url, data, content_type=None):
+        success = False
+        status_code = -1
+        text = ""
+        err_msg = ""
+
+        if content_type == "form":
+            content_type = "application/x-www-form-urlencoded"
+        else:
+            content_type = "text/plain; charset=UTF-8"
+
+        headers = {
+            "Content-Type": content_type,
+            "Authorization": "Basic " + base64.b64encode(f"{self.user}:{self.password}".encode('utf-8')).decode('utf-8'),
+        }
+        try:
+            r = requests.post(url=url, headers=headers, data=data)
+            status_code = r.status_code
+            text = r.text
+            success = True
+        except requests.exceptions.RequestException as e:
+            if hasattr(e, 'response') and e.response is not None:
+                status_code = e.response.status_code
+            err_msg = "HTTPError: " + str(e)[:200]
+        return success, status_code, text, err_msg
+    
     def create_record(self, doi, record_metadata):
         url = f"{self.base_url}/id/{doi}"
         content_type = "text/plain; charset=UTF-8"
         success, status_code, text, err_msg = self._put_data(url, record_metadata, content_type)
         return success, status_code, text, err_msg
 
-
+    def update_record(self, doi, record_metadata):
+        url = f"{self.base_url}/id/{doi}"
+        print(url)
+        content_type = "text/plain; charset=UTF-8"
+        success, status_code, text, err_msg = self._post_data(url, record_metadata, content_type)
+        return success, status_code, text, err_msg
+    
     def _escape(self, s, colonToo=False):
         if colonToo:
             p = "[%:\r\n]"
@@ -61,15 +94,15 @@ class EZIDRecordCreator:
         return "".join("%s: %s\n" % (self._escape(k, True), self._escape(record[k])) for k in sorted(record.keys()))
     
 
-    def create_record_from_xml(self):
+    def create_or_update_record_from_xml(self, operation="create"):
         csv_file = Path(self.file_base_path) / self.config_file
 
         with open(csv_file, newline="", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
-                record_id = f"doi:{row['doi']}"
-                filename = row["filename"]
-                target_url = row["url"]
+                record_id = f"doi:{row['doi'].strip()}"
+                filename = row["filename"].strip()
+                target_url = row["url"].strip()
 
                 # Read the XML file contents
                 xml_path = Path(self.file_base_path) / filename
@@ -83,21 +116,31 @@ class EZIDRecordCreator:
                 print(record_id)
                 #print(target_url)
                 #print(xml_string_no_newlines)
-                record_metadata = {
-                    '_profile': 'datacite',
-                    '_target': target_url,
-                    'datacite': xml_string_no_newlines
-                }
+                if target_url:
+                    record_metadata = {
+                        '_profile': 'datacite',
+                        '_target': target_url,
+                        'datacite': xml_string_no_newlines
+                    }
+                else:
+                    record_metadata = {
+                        '_profile': 'datacite',
+                        'datacite': xml_string_no_newlines
+                    }
                 record_metadata = self._toAnvl(record_metadata).encode("UTF-8")
-                ret = self.create_record(record_id, record_metadata)
+                if operation == "create":
+                    ret = self.create_record(record_id, record_metadata)
+                else:
+                    ret = self.update_record(record_id, record_metadata)
                 print(ret)
 
 def main():
 
-    parser = argparse.ArgumentParser(description='Create EZID records from XML files.')
+    parser = argparse.ArgumentParser(description='Create or update EZID records from XML files.')
 
     # add input and output filename arguments to the parser
     parser.add_argument('-e', '--env', type=str, required=True, choices=['test', 'dev', 'stg', 'prd'], help='Environment')
+    parser.add_argument('-o', '--operation', type=str, required=True, choices=['create', 'update'], help='Operation to perform')
     parser.add_argument('-u', '--user', type=str, required=True, help='user name')
     parser.add_argument('-p', '--password', type=str, required=True, help='password')
     parser.add_argument('-b', '--base_path', type=str, required=True, help='base path for data and config files')
@@ -106,6 +149,7 @@ def main():
     args = parser.parse_args()
 
     env = args.env
+    operation = args.operation
     user = args.user
     password = args.password
     base_path = args.base_path
@@ -120,7 +164,7 @@ def main():
     base_url = base_urls.get(env)
 
     record_creator = EZIDRecordCreator(base_url, user, password, base_path, config_file)
-    record_creator.create_record_from_xml()
+    record_creator.create_or_update_record_from_xml(operation=operation)
 
 
 if __name__ == "__main__":
