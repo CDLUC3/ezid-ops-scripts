@@ -12,7 +12,7 @@ pip install requests
 
 ```sh
 python3 test_n2t_api.py --base-url https://n2t.net
-python3 test_n2t_api.py --base-url https://n2t-stg.n2t.net
+python3 test_n2t_api.py --base-url https://n2t-stg.cdlib.org
 ```
 
 Exits non-zero if any test fails.
