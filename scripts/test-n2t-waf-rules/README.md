@@ -10,11 +10,17 @@ Script for testing WAF rules on N2T. Attempts to resolve each `base_ark` and `fu
 ## Usage
 
 ```bash
-# Production
+# n2t.net (production)
 python3 check_resolution.py
 
-# Staging
-python3 check_resolution.py --env staging
+# n2t-stg.cdlib.org (staging)
+python3 check_resolution.py --env n2t-staging
+
+# arks.org (production)
+python3 check_resolution.py --env arks
+
+# arks-stg.cdlib.org (staging)
+python3 check_resolution.py --env arks-staging
 
 # Custom resolver (overrides --env)
 python3 check_resolution.py --resolver https://custom.example.com
@@ -26,12 +32,14 @@ python3 check_resolution.py --check full
 python3 check_resolution.py --limit 50
 ```
 
-Defaults: `--env production`, `--check both`, `--workers 10`, `--timeout 30`.
+Defaults: `--env n2t-production`, `--check both`, `--workers 10`, `--timeout 30`.
 
-| Env          | URL                          |
-| ------------ | ---------------------------- |
-| `production` | `https://n2t.net`            |
-| `staging`    | `https://n2t-stg.cdlib.org`  |
+| Env              | URL                            |
+| ---------------- | ------------------------------ |
+| `n2t-production` | `https://n2t.net`              |
+| `n2t-staging`    | `https://n2t-stg.cdlib.org`    |
+| `arks`           | `https://arks.org`             |
+| `arks-staging`   | `https://arks-stg.cdlib.org`   |
 
 ## Behavior
 
@@ -55,8 +63,8 @@ failure breakdown by institution + ark_kind with sample errors.
 Diff staging vs production:
 
 ```bash
-diff <(jq -c '{ark,status,ok}' data/resolution_results_staging.jsonl) \
-     <(jq -c '{ark,status,ok}' data/resolution_results_production.jsonl)
+diff <(jq -c '{ark,status,ok}' data/resolution_results_n2t-staging.jsonl) \
+     <(jq -c '{ark,status,ok}' data/resolution_results_n2t-production.jsonl)
 ```
 
 Exit code: `0` if all pass, `1` if any failed.
