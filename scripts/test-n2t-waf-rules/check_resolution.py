@@ -23,8 +23,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ENVIRONMENTS = {
-    "production": "https://n2t.net",
-    "staging": "https://n2t-stg.cdlib.org",
+    "n2t-production": "https://n2t.net",
+    "n2t-staging": "https://n2t-stg.cdlib.org",
+    "arks": "https://arks.org",
+    "arks-staging": "https://arks-stg.cdlib.org",
 }
 DEFAULT_USER_AGENT = (
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
@@ -167,7 +169,7 @@ def main(argv: list[str] | None = None) -> int:
     here = Path(__file__).resolve().parent
     parser.add_argument("--input", type=Path, default=here / "data" / "ark_spt_sample.jsonl",
                         help="JSONL dataset to check (default: data/ark_spt_sample.jsonl)")
-    parser.add_argument("--env", choices=list(ENVIRONMENTS.keys()), default="production",
+    parser.add_argument("--env", choices=list(ENVIRONMENTS.keys()), default="n2t-production",
                         help=f"resolver environment; sets default --resolver. {ENVIRONMENTS}")
     parser.add_argument("--resolver", type=str, default=None,
                         help="resolver URL override; if unset, derived from --env")
