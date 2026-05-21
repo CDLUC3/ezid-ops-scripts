@@ -1,15 +1,14 @@
 import os
 
 import argparse
-import requests
 import base64
 import re
-import subprocess
-import time
-import pdb
+import requests
 from requests.auth import HTTPBasicAuth
 import shortuuid
 
+from datetime import datetime, timedelta, timezone
+import time
 
 class VerifyEzidStatus:
     def __init__(self, base_url, user, password):
@@ -436,15 +435,18 @@ class VerifyEzidStatus:
                 f"  Error - ?info for instrospection - status_code: {response.status_code}: {response.text.strip()}")
 
 
-    def check_batch_download(self, notify_email):
+    def check_batch_download(self, notify_email, days_before):
         print("## Check batch download from S3")
+        # limit by createdAfter date to avoid processing a large download file
+        createdAfter = self.get_date_by_days_before(days_before)
         data = [
             ('format', 'csv'),
             ('type', 'ark'),
             ('column', '_id'),
             ('column', '_mappedCreator'),
             ('column', '_mappedTitle'),
-            ('notify', notify_email)
+            ('notify', notify_email),
+            ('createdAfter', createdAfter)
         ]
         url = f"{self.base_url}/download_request"
 
@@ -457,7 +459,9 @@ class VerifyEzidStatus:
             s3_file_url = text[9:]
             assert part_1, "success"
 
-            # batch download is processed asynchronously, wait until the file is ready for download
+            print("  batch download is processed asynchronously, wait until the file is ready for download")
+            print(f"  waiting for file to be available at: {s3_file_url}")   
+            print
             count = 0
             success = False
             wait_time = 0
@@ -475,9 +479,10 @@ class VerifyEzidStatus:
                 print(f"  ok - batch download file is available at: {s3_file_url}")
                 print(f"  Info: Please check account {notify_email} for email with Subject: Your EZID batch download link")
             else:
-                print(f"  Error - batch download failed: {s3_file_url} - status_code: {status_code}: {text}: {err_msg}")
+                print(f"  Error/Warning - batch download failed or timed out: {s3_file_url} - status_code: {status['status_code']}: {status['text']}: {status['err_msg']}")
+                print(f"  Info: Please check account {notify_email} for email with Subject: Your EZID batch download link in case the file becomes available after the timeout.")
         else:
-            print(f"  Error - batch download failed - status_code: {status_code}: {text}: {err_msg}")
+            print(f"  Error - post download request failed - status_code: {status_code}: {text}: {err_msg}")
 
 
     def check_resolver(self):
@@ -489,6 +494,12 @@ class VerifyEzidStatus:
         else:
             print(f"  Error - resolver - code({status['status_code']}): {status['err_msg']}")
 
+    def get_date_by_days_before(self, days_before):
+        date_1 = datetime.now(timezone.utc) - timedelta(days=days_before)
+        # date format: 2026-05-13T00:00:00Z
+        formatted_date = date_1.strftime("%Y-%m-%dT00:00:00Z")
+        #print(formatted_date)
+        return formatted_date
 
 def main():
 
@@ -501,7 +512,8 @@ def main():
     parser.add_argument('-v', '--version', type=str, required=False, help='version')
     parser.add_argument('-n', '--notify_email', type=str, required=False, help='Email address to receive download notification.')
     parser.add_argument('-s', '--skip-download', action='store_true', help='Skip batch download check')
- 
+    parser.add_argument('-d', '--days-before', type=int, default=3, help='Number of days before to check for batch downloads')
+
     args = parser.parse_args()
 
     if not args.skip_download and not args.notify_email:
@@ -512,7 +524,8 @@ def main():
     password = args.password
     version = args.version
     notify_email = args.notify_email
-  
+    days_before = args.days_before
+
     base_urls = {
         "test": "http://127.0.0.1:8000",
         "dev": "https://ezid-dev.cdlib.org",
@@ -550,7 +563,7 @@ def main():
     ves.check_resolver()
 
     if not args.skip_download:
-        ves.check_batch_download(notify_email)
+        ves.check_batch_download(notify_email, days_before)
 
 
 if __name__ == "__main__":
