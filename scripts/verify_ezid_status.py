@@ -497,7 +497,6 @@ class VerifyEzidStatus:
         date_1 = datetime.now(timezone.utc) - timedelta(days=days_before)
         # date format: 2026-05-13T00:00:00Z
         formatted_date = date_1.strftime("%Y-%m-%dT00:00:00Z")
-        #print(formatted_date)
         return formatted_date
 
 def main():
