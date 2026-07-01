@@ -461,7 +461,6 @@ class VerifyEzidStatus:
 
             print("  batch download is processed asynchronously, wait until the file is ready for download")
             print(f"  waiting for file to be available at: {s3_file_url}")   
-            print
             count = 0
             success = False
             wait_time = 0
