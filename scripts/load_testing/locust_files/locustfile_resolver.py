@@ -1,3 +1,13 @@
+# This script can be used to load testing the resolver functionality for EZID, N2T and ARKs
+# with hostnames provided in the "--host" option or in the UI.
+# Hostnames for each service:
+# - ezid: https://ezid.cdlib.org
+# - n2t: https://n2t.net
+# - arks: https://arks.org
+# Sample command:
+# locust -f scripts/load_testing/locust_files/locustfile_resolver.py --host=https://n2t.net
+
+
 import logging
 import random
 import gevent
