@@ -1,29 +1,32 @@
-# Load test setup for EZID
+# Load test for EZID, N2T and ARKs using Locust
 
-Uses https://github.com/locustio/locust.
+We use LOCUST [An open source load testing tool](https://locust.io/), [repo](https://github.com/locustio/locust) to perform load test for EZID, N2T and ARKs.
 
-The `getid/locust.py` script gathers identifiers from MySQL and hits the
-resolve endpoint as a simple load test for resolve.
+Testing scripts or locust files and data files are saved in the `locust_files` directory.
 
-Uses environment variables like:
+To run the load tests:
 
+1. Create Python virtual environment using `venv`
 ```
-$ cat test.env
-EZID_DB_PORT="database port"
-EZID_DB_USER="database user"
-EZID_DB_PASS="database password"
-EZID_DB="database name"
+python -m venv .venv
 ```
-e.g. in a shell, open a tunnel to dev mysql like:
+Activate the virtual environment
 ```
-ssh -L3306:dev-database-server-host-name:3306 ezid-dev-server
+source .venv/bin/activate
 ```
 
-Then run this script like:
+2. Install `locust`
 ```
-poetry run locust -f getid/locustfile.py
+pip install locust
 ```
 
-And set the URL to the resolve endpoint.
+3. Create the load test scripts in the `locust_files` directory.
 
-This same pattern can be used for other get ops that use identifiers.
+4. Run the load test in the `locust_files` directory
+```
+cd locust_files
+
+locust -f locustfile.py
+```
+
+
