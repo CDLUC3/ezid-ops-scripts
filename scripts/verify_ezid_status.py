@@ -155,7 +155,7 @@ class VerifyEzidStatus:
             print(f"  Error - code({status['status_code']}): {status['err_msg']}")
 
     def verify_ezid_version(self, version, run_time=None):
-        print(f"## EZID version - {run_time}")
+        print("## EZID version" + (f" - {run_time}" if run_time else ""))
         status = self._get_status(f"{self.base_url}/version")
         if status['success']:
             try:
