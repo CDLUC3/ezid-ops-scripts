@@ -154,8 +154,8 @@ class VerifyEzidStatus:
         else:
             print(f"  Error - code({status['status_code']}): {status['err_msg']}")
 
-    def verify_ezid_version(self, version):
-        print("## EZID version")
+    def verify_ezid_version(self, version, run_time=None):
+        print(f"## EZID version - {run_time}")
         status = self._get_status(f"{self.base_url}/version")
         if status['success']:
             try:
@@ -537,7 +537,8 @@ def main():
     ves = VerifyEzidStatus(base_url, user, password)
 
     ves.verify_ezid_status()
-    ves.verify_ezid_version(version)
+    ves.verify_ezid_version(version, "1st run")
+    ves.verify_ezid_version(version, "2nd run")
 
     ves.verify_search_function()
 
