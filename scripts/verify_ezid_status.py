@@ -537,6 +537,8 @@ def main():
     ves = VerifyEzidStatus(base_url, user, password)
 
     ves.verify_ezid_status()
+
+    # Verify EZID version twice to ensure it is consistent among multiple instances
     ves.verify_ezid_version(version, "1st run")
     ves.verify_ezid_version(version, "2nd run")
 
